@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<jnlp spec="1.0" xmlns:jfx="http://javafx.com" href="ErrorDetection.jnlp">
+  <information>
+    <title>ErrorDetection</title>
+    <vendor>edward</vendor>
+    <description>null</description>
+    <offline-allowed/>
+  </information>
+  <resources>
+    <j2se version="1.6+" href="http://java.sun.com/products/autodl/j2se"/>
+    <jar href="ErrorDetection.jar" size="86881" download="eager" />
+    <jar href="lib/jxl.jar" size="725735" download="eager" />
+    <jar href="lib/swingx-all-1.6.4.jar" size="1487304" download="eager" />
+  </resources>
+  <application-desc main-class="errordetection.MyJXTable"  name="ErrorDetection" >
+  </application-desc>
+  <update check="always"/>
+</jnlp>

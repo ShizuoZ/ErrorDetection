@@ -12,6 +12,7 @@ import java.awt.Rectangle;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
+import java.awt.event.WindowEvent;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.io.BufferedReader;
@@ -111,6 +112,7 @@ public class MyJXTable  {
     private static TableRowSorter<TableModel> sorter;
     private static SampleTableModel model;
     private static ListIndexBar bar;
+    private static JXFrame frame = new JXFrame("EventLog", true);
     
     public MyJXTable() {
         this.address = "/Day&Night.csv";
@@ -272,7 +274,7 @@ public class MyJXTable  {
         // bug: there is no API to read the current value! we will assume it is false
         final JCheckBox sorting = new JCheckBox();
         
-        sorting.setSelected(jxTable.isSortable());
+        sorting.setSelected(!jxTable.isSortable());
         sorting.setAction(new AbstractAction("Sortable") {
             public void actionPerformed(ActionEvent e) {
                 jxTable.setSortable(sorting.isSelected());
@@ -308,6 +310,8 @@ public class MyJXTable  {
         
         JButton button_ExportFile = new JButton("export");
         JButton button_ImportFile = new JButton("import");
+        button_ExportFile.setFont(new java.awt.Font("Lucida Grande", 0, 10));
+        button_ImportFile.setFont(new java.awt.Font("Lucida Grande", 0, 10));
 //        JMenu menu = new JMenu("File");
 //        JMenuBar menuBar = new JMenuBar();
 //        menuBar.add(menu);
@@ -350,20 +354,11 @@ public class MyJXTable  {
                     case "Default": 
                         bar.clearMarkers();
                         bar.clearMedMarkers();
+                        jxTable.setHighlighters(new ColorHighlighter(HighlightPredicate.ROLLOVER_ROW, 
+                                Color.BLACK,
+                                Color.WHITE));
                         break;
                     case "All Errors":
-                        RowFilter<Object, Object> filter = new RowFilter<Object,Object>(){  
-                        public boolean include(RowFilter.Entry entry){//entry：入口，登记  
-                            Integer population = (Integer)entry.getIdentifier();//population:人口  
-                            //intValue()以 int 类型返回该 Integer 的值。  
-                            return ERROR_INDEX_LIST.contains(population);//过虑大于1的行  
-                            //因为filter的返回值定义为Integer,所以表格内Object[][]中出现其它类型会出错  
-                            }  
-                        };   
-                        sorter = new TableRowSorter<TableModel>(model);
-//                        sorter.setRowFilter(filter); 
-//                        jxTable.setRowSorter(sorter);
-                      
                         final HighlightPredicate myPredicate = new HighlightPredicate() {
                             @Override 
                             public boolean isHighlighted(
@@ -390,7 +385,10 @@ public class MyJXTable  {
                             myPredicateMed,
                             WARNING_COLOUR,   // background color
                             null);       // no change in foreground color
-                        jxTable.setHighlighters(highlighterMed);
+                        jxTable.setHighlighters(new ColorHighlighter(HighlightPredicate.ROLLOVER_ROW, 
+                                Color.BLACK,
+                                Color.WHITE));
+                        jxTable.addHighlighter(highlighterMed);
                         jxTable.addHighlighter(highlighter);
                         bar.clearMarkers();
                         bar.clearMedMarkers();
@@ -402,17 +400,6 @@ public class MyJXTable  {
 //                        frame.add(bar);
                         break;
                     case "invalid & insuff errors":
-                        filter = new RowFilter<Object,Object>(){  
-                        public boolean include(RowFilter.Entry entry){//entry：入口，登记  
-                            Integer population = (Integer)entry.getIdentifier();//population:人口  
-                            //intValue()以 int 类型返回该 Integer 的值。  
-                            return INVALID_ERROR_LIST.contains(population);//过虑大于1的行  
-                            //因为filter的返回值定义为Integer,所以表格内Object[][]中出现其它类型会出错  
-                            }  
-                        };   
-                        sorter = new TableRowSorter<TableModel>(model);
-//                        sorter.setRowFilter(filter); 
-//                        jxTable.setRowSorter(sorter);
                         final HighlightPredicate myPredicateInv = new HighlightPredicate() {
                             @Override 
                             public boolean isHighlighted(
@@ -439,7 +426,10 @@ public class MyJXTable  {
                             myPredicateInsuff,
                             WARNING_COLOUR,   // background color
                             null);       // no change in foreground color
-                        jxTable.setHighlighters(highlighterInsuff);
+                        jxTable.setHighlighters(new ColorHighlighter(HighlightPredicate.ROLLOVER_ROW, 
+                                Color.BLACK,
+                                Color.WHITE));
+                        jxTable.addHighlighter(highlighterInsuff);
                         jxTable.addHighlighter(highlighterInv);
                         bar.clearMarkers();
                         bar.clearMedMarkers();
@@ -452,17 +442,6 @@ public class MyJXTable  {
 //                        frame.add(bar);
                         break;
                     case "Duration errors":
-                        filter = new RowFilter<Object,Object>(){  
-                        public boolean include(RowFilter.Entry entry){//entry：入口，登记  
-                            Integer population = (Integer)entry.getIdentifier();//population:人口  
-                            //intValue()以 int 类型返回该 Integer 的值。  
-                            return DUR_ERROR_LIST.contains(population);//过虑大于1的行  
-                            //因为filter的返回值定义为Integer,所以表格内Object[][]中出现其它类型会出错  
-                            }  
-                        };   
-                        sorter = new TableRowSorter<TableModel>(model);
-//                        sorter.setRowFilter(filter);
-//                        jxTable.setRowSorter(sorter);
                         final HighlightPredicate myPredicateDur = new HighlightPredicate() {
                             @Override 
                             public boolean isHighlighted(
@@ -489,7 +468,10 @@ public class MyJXTable  {
                               myPredicateDurLight,
                               WARNING_COLOUR,   // background color
                               null);       // no change in foreground color
-                        jxTable.setHighlighters(highlighterDurLight);
+                        jxTable.setHighlighters(new ColorHighlighter(HighlightPredicate.ROLLOVER_ROW, 
+                                Color.BLACK,
+                                Color.WHITE));
+                        jxTable.addHighlighter(highlighterDurLight);
                         jxTable.addHighlighter(highlighterDur);
                         
                         bar.clearMarkers();
@@ -502,17 +484,6 @@ public class MyJXTable  {
 //                        frame.add(bar);
                         break;
                     case "Time errors":
-                        filter = new RowFilter<Object,Object>(){  
-                        public boolean include(RowFilter.Entry entry){//entry：入口，登记  
-                            Integer population = (Integer)entry.getIdentifier();//population:人口  
-                            //intValue()以 int 类型返回该 Integer 的值。  
-                            return TIME_ERROR_LIST.contains(population);//过虑大于1的行  
-                            //因为filter的返回值定义为Integer,所以表格内Object[][]中出现其它类型会出错  
-                            }  
-                        };   
-                        sorter = new TableRowSorter<TableModel>(model);
-//                        sorter.setRowFilter(filter); 
-//                        jxTable.setRowSorter(sorter);
                         final HighlightPredicate myPredicateTime = new HighlightPredicate() {
                             @Override 
                             public boolean isHighlighted(
@@ -539,7 +510,10 @@ public class MyJXTable  {
                               myPredicateTimeLight,
                               WARNING_COLOUR,   // background color
                               null);       // no change in foreground color
-                        jxTable.setHighlighters(highlighterTimeLight);
+                        jxTable.setHighlighters(new ColorHighlighter(HighlightPredicate.ROLLOVER_ROW, 
+                                Color.BLACK,
+                                Color.WHITE));
+                        jxTable.addHighlighter(highlighterTimeLight);
                         jxTable.addHighlighter(highlighterTime);
                         bar.clearMarkers();
                         bar.clearMedMarkers();
@@ -549,17 +523,6 @@ public class MyJXTable  {
 //                        frame.add(bar);
                         break;
                     case "Case errors":
-                        filter = new RowFilter<Object,Object>(){  
-                        public boolean include(RowFilter.Entry entry){//entry：入口，登记  
-                            Integer population = (Integer)entry.getIdentifier(); 
-                            //intValue()以 int 类型返回该 Integer 的值。  
-                            return CASE_ERROR_LIST.contains(population);
-                            //因为filter的返回值定义为Integer,所以表格内Object[][]中出现其它类型会出错  
-                            }  
-                        };   
-                        sorter = new TableRowSorter<TableModel>(model);
-//                        sorter.setRowFilter(filter); 
-//                        jxTable.setRowSorter(sorter);
                         final HighlightPredicate myPredicateCase = new HighlightPredicate() {
                             @Override 
                             public boolean isHighlighted(
@@ -586,7 +549,10 @@ public class MyJXTable  {
                               myPredicateCaseLight,
                               WARNING_COLOUR,   // background color
                               null);       // no change in foreground color
-                        jxTable.setHighlighters(highlighterCaseLight);
+                        jxTable.setHighlighters(new ColorHighlighter(HighlightPredicate.ROLLOVER_ROW, 
+                                Color.BLACK,
+                                Color.WHITE));
+                        jxTable.addHighlighter(highlighterCaseLight);
                         jxTable.addHighlighter(highlighterCase);
                         bar.clearMarkers();
                         bar.clearMedMarkers();
@@ -605,8 +571,8 @@ public class MyJXTable  {
         config.add(button_ImportFile);
         config.add(button_ExportFile);
 //        config.add(control);
-        config.add(sorting);
-        config.add(horiz);
+//        config.add(sorting);
+//        config.add(horiz);
         config.add(filterbox);  
         return config;
     }
@@ -688,7 +654,7 @@ public class MyJXTable  {
         //Create and set up the content pane.
         JComponent newContentPane = new MyJXTable(BAR_NUMS,address).initUI();
         newContentPane.setOpaque(true); //content panes must be opaque
-        final JXFrame frame = new JXFrame("EventLog", true);
+//        frame = new JXFrame("EventLog", true);
         frame.setContentPane(newContentPane);
         
         //Display the window.
@@ -768,16 +734,15 @@ public class MyJXTable  {
         }
     }
     
-
-    public static void startTable() {
-        //Schedule a job for the event-dispatching thread:
-        //creating and showing this application's GUI.
-        javax.swing.SwingUtilities.invokeLater(new Runnable() {
-            public void run() {
-                createAndShowGUI();
-            }
-        });
-    }
+//    public static void startTable() {
+//        //Schedule a job for the event-dispatching thread:
+//        //creating and showing this application's GUI.
+//        javax.swing.SwingUtilities.invokeLater(new Runnable() {
+//            public void run() {
+//                createAndShowGUI();
+//            }
+//        });
+//    }
     
     public static void main(String args[]) {
         //Schedule a job for the event-dispatching thread:
@@ -795,6 +760,7 @@ public class MyJXTable  {
             // Read csv file here
             String address = fileChooser.getSelectedFile().getAbsolutePath();
             System.out.println(address);
+            frame.dispatchEvent(new WindowEvent(frame, WindowEvent.WINDOW_CLOSING));
             import_display(address);
         }
     }
@@ -803,7 +769,7 @@ public class MyJXTable  {
         DEEventLog deeventLog;  
         try {        
             deeventLog = new DEEventLog(address);
-             List<DEEvent> errors = deeventLog.detectError();
+            List<DEEvent> errors = deeventLog.detectError();
             List<DEEvent> invErrors = deeventLog.invError();
             List<DEEvent> durErrors = deeventLog.DurError();
             List<DEEvent> TimeErrors = deeventLog.TimeError();
@@ -875,7 +841,7 @@ public class MyJXTable  {
                     errMarkersLight, invErrMarkersLight, insuffErrMarkersLight, 
                     durErrMarkersLight, timeErrMarkersLight, caseErrMarkersLight
                     );
-            myJXTable.startTable();
+            myJXTable.createAndShowGUI();
         } catch (BiffException ex) {
             Logger.getLogger(MyJXTable.class.getName()).log(Level.SEVERE, null, ex);
         } catch (IOException ex) {

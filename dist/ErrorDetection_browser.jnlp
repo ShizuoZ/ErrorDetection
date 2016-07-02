@@ -8,7 +8,7 @@
   </information>
   <resources>
     <j2se version="1.6+" href="http://java.sun.com/products/autodl/j2se"/>
-    <jar href="ErrorDetection.jar" size="86881" download="eager" />
+    <jar href="ErrorDetection.jar" size="86825" download="eager" />
     <jar href="lib/jxl.jar" size="725735" download="eager" />
     <jar href="lib/swingx-all-1.6.4.jar" size="1487304" download="eager" />
   </resources>

@@ -6,13 +6,19 @@ package errordetection;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Component;
+import java.awt.Dimension;
 import java.awt.FlowLayout;
+import java.awt.GridLayout;
+import java.awt.Paint;
 import java.awt.Point;
 import java.awt.Rectangle;
+import java.awt.ScrollPane;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.awt.event.WindowEvent;
+import java.awt.image.BufferedImage;
+import java.awt.image.Raster;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.io.BufferedReader;
@@ -32,21 +38,28 @@ import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
+import javax.imageio.ImageIO;
 
 import javax.swing.AbstractAction;
+import javax.swing.BorderFactory;
+import javax.swing.GroupLayout;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
 import javax.swing.JComponent;
+import javax.swing.JEditorPane;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
+import javax.swing.JLabel;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+import javax.swing.JTabbedPane;
 import javax.swing.JTable;
 import javax.swing.JTextField;
+import javax.swing.JTextPane;
 import javax.swing.JViewport;
 import javax.swing.ListSelectionModel;
 import javax.swing.RowFilter;
@@ -68,6 +81,16 @@ import org.jdesktop.swingx.sort.RowFilters;
 import org.jdesktop.swingx.table.ColumnFactory;
 import org.jdesktop.swingx.table.TableColumnExt;
 import org.jdesktop.swingx.decorator.ComponentAdapter;
+import org.jfree.chart.ChartFactory;
+import org.jfree.chart.ChartPanel;
+import org.jfree.chart.JFreeChart;
+import org.jfree.chart.plot.DefaultDrawingSupplier;
+import org.jfree.chart.plot.PlotOrientation;
+import org.jfree.chart.plot.XYPlot;
+import org.jfree.chart.renderer.xy.StandardXYBarPainter;
+import org.jfree.chart.renderer.xy.XYBarRenderer;
+import org.jfree.data.statistics.HistogramDataset;
+
 
 
 /**
@@ -107,12 +130,14 @@ public class MyJXTable  {
     private static JXTable jxTable = new JXTable();
     private JFileChooser fileChooser;
     private JPanel config;
+    private JPanel parameter;
+    private JPanel charts;
     private static String address;
     private static List<DEEvent> eventlog;
     private static TableRowSorter<TableModel> sorter;
     private static SampleTableModel model;
     private static ListIndexBar bar;
-    private static JXFrame frame = new JXFrame("EventLog", true);
+    private static JXFrame frame = new JXFrame("Error Detection", true);
     
     public MyJXTable() {
         this.address = "/Day&Night.csv";
@@ -134,14 +159,26 @@ public class MyJXTable  {
  
     private JComponent initUI() {
         JComponent content = new JPanel(new BorderLayout());
+//        content.setBorder(BorderFactory.createTitledBorder("Error Det"));
         jxTable = initTable();
         configureJXTable(jxTable);
+        parameter = new JPanel();
+        charts = new JPanel();
         
         //Create the scroll pane and add the table to it.
         JScrollPane scrollPane = new JScrollPane(jxTable);
-        
+        JComponent tabbedPane = new JTabbedPane(3);
+        JComponent tablePane = new JPanel(new BorderLayout());
+        tablePane.add(scrollPane, BorderLayout.CENTER);
+        tablePane.add(bar, BorderLayout.EAST);
+        tabbedPane.setBorder(BorderFactory.createTitledBorder("Table Panel"));
+        tabbedPane.add("EventView",tablePane);
+        tabbedPane.setPreferredSize(new Dimension(400,400));
         //Add the scroll pane to this panel.
-        content.add(scrollPane, BorderLayout.CENTER);
+        content.add(tabbedPane, BorderLayout.SOUTH);
+        
+        content.add(initParameterPanel(), BorderLayout.WEST);
+        content.add(initChartPanel(), BorderLayout.CENTER);
         
         content.add(initConfigPanel(jxTable), BorderLayout.NORTH);
         return content;
@@ -256,6 +293,7 @@ public class MyJXTable  {
     /** This shows off some additional JXTable configuration, controlled by checkboxes in a Panel. */
     private JPanel initConfigPanel(final JXTable jxTable) {
         config = new JPanel();
+        config.setBorder(BorderFactory.createTitledBorder("config Panel"));
         FlowLayout fll = (FlowLayout)config.getLayout();
         fll.setAlignment(FlowLayout.LEFT);
         fll.setHgap(30);
@@ -268,7 +306,6 @@ public class MyJXTable  {
                 jxTable.setColumnControlVisible(control.isSelected());
             }
         });
-        
         
         // turn sorting by column on or off
         // bug: there is no API to read the current value! we will assume it is false
@@ -310,8 +347,10 @@ public class MyJXTable  {
         
         JButton button_ExportFile = new JButton("export");
         JButton button_ImportFile = new JButton("import");
+        JButton button_hide = new JButton("hide");
         button_ExportFile.setFont(new java.awt.Font("Lucida Grande", 0, 10));
         button_ImportFile.setFont(new java.awt.Font("Lucida Grande", 0, 10));
+        button_hide.setFont(new java.awt.Font("Lucida Grande", 0, 10));
 //        JMenu menu = new JMenu("File");
 //        JMenuBar menuBar = new JMenuBar();
 //        menuBar.add(menu);
@@ -394,7 +433,6 @@ public class MyJXTable  {
                         bar.clearMedMarkers();
                         bar.setForeground(ERROR_COLOUR);
 //                        bar.addLightMarkers(ERROR_INDEX_LIST);
-                        
                         bar.addMedMarkers(ERROR_INDEX_LIST_LIGHT); 
                         bar.addMarkers(INVALID_ERROR_LIST);
 //                        frame.add(bar);
@@ -435,9 +473,9 @@ public class MyJXTable  {
                         bar.clearMedMarkers();
                         bar.setForeground(ERROR_COLOUR);
 //                        bar.addLightMarkers(ERROR_INDEX_LIST);
-                        
                         bar.addMedMarkers(INSUFF_ERROR_LIST_LIGHT); 
                         bar.addMarkers(INVALID_ERROR_LIST);
+                       
 //                        frame.add(bar);
 //                        frame.add(bar);
                         break;
@@ -520,6 +558,7 @@ public class MyJXTable  {
                         bar.setForeground(ERROR_COLOUR);
                         bar.addMedMarkers(TIME_ERROR_LIST_LIGHT);
                         bar.addMarkers(TIME_ERROR_LIST);
+                        
 //                        frame.add(bar);
                         break;
                     case "Case errors":
@@ -568,13 +607,181 @@ public class MyJXTable  {
         
 //        config.add(fileChooser);
 //        jxTable.setRowSorter(sorter);
+//        config.add(button_hide);
         config.add(button_ImportFile);
         config.add(button_ExportFile);
 //        config.add(control);
 //        config.add(sorting);
 //        config.add(horiz);
         config.add(filterbox);  
+       
         return config;
+    }
+    
+    private JPanel initParameterPanel(){
+        JLabel l1 = new JLabel("insuffThreshold: ");
+        JTextField t1 = new JTextField(3);
+        JLabel l2 = new JLabel("actdurSTDbnd: ");
+        JTextField t2 = new JTextField(3);
+        JTextField t3 = new JTextField(3);
+        JLabel l3 = new JLabel("actdurknnmax: ");
+        JTextField t4 = new JTextField(3);
+        JLabel l4 = new JLabel("actdurCLUSTbnd: ");
+        JTextField t5 = new JTextField(3);
+        JTextField t6 = new JTextField(3);
+        JLabel l5 = new JLabel("actdurCLUSTtest: ");
+        JTextField t7 = new JTextField(3);
+        JLabel l6 = new JLabel("acttimeSTDbnd: ");
+        JTextField t8 = new JTextField(3);
+        JTextField t9 = new JTextField(3);
+        JLabel l7 = new JLabel("acttimeKNNmax: ");
+        JTextField t10 = new JTextField(3);
+        JLabel l8 = new JLabel("caseSTDbnd: ");
+        JTextField t11 = new JTextField(3);
+        JTextField t12 = new JTextField(3);
+        JLabel l9 = new JLabel("caseRANGEbnd: ");
+        JTextField t13 = new JTextField(3);
+        JTextField t14 = new JTextField(3);
+        
+        JButton b = new JButton("apply");
+        JButton h = new JButton("hide");
+        GroupLayout parameterLayout = new GroupLayout(parameter);
+        parameter.setLayout(parameterLayout);
+        parameter.setBorder(BorderFactory.createTitledBorder("Parameter Panel"));
+        
+        parameterLayout.setAutoCreateGaps(true);
+        parameterLayout.setAutoCreateContainerGaps(true);
+        parameterLayout.setHorizontalGroup(
+            parameterLayout.createSequentialGroup()
+                .addGroup(parameterLayout.createParallelGroup(GroupLayout.Alignment.TRAILING)
+                    .addComponent(l2)
+                    .addComponent(l4)
+                    .addComponent(l6)
+                    .addComponent(l8)
+                    .addComponent(l9)
+                )
+                .addGroup(parameterLayout.createParallelGroup(GroupLayout.Alignment.LEADING)
+                    .addComponent(t2)
+                    .addComponent(t5)
+                    .addComponent(t8)
+                    .addComponent(t11)
+                    .addComponent(t13)
+                )
+                .addGroup(parameterLayout.createParallelGroup(GroupLayout.Alignment.LEADING)
+                    .addComponent(t3)
+                    .addComponent(t6)
+                    .addComponent(t9)
+                    .addComponent(t12)
+                    .addComponent(t14)
+                )
+                .addGroup(parameterLayout.createParallelGroup(GroupLayout.Alignment.TRAILING)
+                    .addComponent(l1)
+                    .addComponent(l3)
+                    .addComponent(l5)
+                    .addComponent(l7)
+                    .addComponent(b)
+                )
+                .addGroup(parameterLayout.createParallelGroup(GroupLayout.Alignment.LEADING)
+                    .addComponent(t1)
+                    .addComponent(t4)
+                    .addComponent(t7)
+                    .addComponent(t10)
+                    .addComponent(h)
+                )
+        );
+        parameterLayout.setVerticalGroup(
+        parameterLayout.createSequentialGroup()
+            .addGroup(parameterLayout.createParallelGroup(GroupLayout.Alignment.BASELINE)
+                .addComponent(l2)
+                .addComponent(t2)
+                .addComponent(t3)
+                .addComponent(l1)
+                .addComponent(t1)
+            )
+            .addGroup(parameterLayout.createParallelGroup(GroupLayout.Alignment.BASELINE)
+                .addComponent(l4)
+                .addComponent(t5)
+                .addComponent(t6)
+                .addComponent(l3)
+                .addComponent(t4)
+            )
+            .addGroup(parameterLayout.createParallelGroup(GroupLayout.Alignment.BASELINE)
+                .addComponent(l6)
+                .addComponent(t8)
+                .addComponent(t9)
+                .addComponent(l5)
+                .addComponent(t7)
+            )
+            .addGroup(parameterLayout.createParallelGroup(GroupLayout.Alignment.BASELINE)
+                .addComponent(l8)
+                .addComponent(t11)
+                .addComponent(t12)
+                .addComponent(l7)
+                .addComponent(t10)
+            )
+            .addGroup(parameterLayout.createParallelGroup(GroupLayout.Alignment.BASELINE)
+                .addComponent(l9)
+                .addComponent(t13)
+                .addComponent(t14)
+                .addComponent(b)
+                .addComponent(h)
+            )
+        );
+        return parameter;
+    }
+    
+    private static final int BINS = 256;
+    private final BufferedImage image = getImage();
+
+    private BufferedImage getImage() {
+        try {
+            return ImageIO.read(new URL(
+                "http://i.imgur.com/kxXhIH1.jpg"));
+        } catch (IOException e) {
+            e.printStackTrace(System.err);
+        }
+        return null;
+    }
+
+    private ChartPanel initChartPanel() {
+        // dataset
+        HistogramDataset dataset = new HistogramDataset();
+        Raster raster = image.getRaster();
+        final int w = image.getWidth();
+        final int h = image.getHeight();
+        double[] r = new double[w * h];
+        r = raster.getSamples(0, 0, w, h, 0, r);
+        dataset.addSeries("Red", r, BINS);
+        r = raster.getSamples(0, 0, w, h, 1, r);
+        dataset.addSeries("Green", r, BINS);
+        r = raster.getSamples(0, 0, w, h, 2, r);
+        dataset.addSeries("Blue", r, BINS);
+        // chart
+        JFreeChart chart = ChartFactory.createHistogram("Histogram", "Value",
+            "Count", dataset, PlotOrientation.VERTICAL, true, true, false);
+        chart.getPlot().setBackgroundPaint( new Color(0, 255, 0, 0) );
+        chart.getPlot().setBackgroundAlpha(1.0f);
+        XYPlot plot = (XYPlot) chart.getPlot();
+        XYBarRenderer renderer = (XYBarRenderer) plot.getRenderer();
+        renderer.setBarPainter(new StandardXYBarPainter());
+        // translucent red, green & blue
+        Paint[] paintArray = {
+            new Color(0x80ff0000, true),
+            new Color(0x8000ff00, true),
+            new Color(0x800000ff, true)
+        };
+        plot.setDrawingSupplier(new DefaultDrawingSupplier(
+            paintArray,
+            DefaultDrawingSupplier.DEFAULT_FILL_PAINT_SEQUENCE,
+            DefaultDrawingSupplier.DEFAULT_OUTLINE_PAINT_SEQUENCE,
+            DefaultDrawingSupplier.DEFAULT_STROKE_SEQUENCE,
+            DefaultDrawingSupplier.DEFAULT_OUTLINE_STROKE_SEQUENCE,
+            DefaultDrawingSupplier.DEFAULT_SHAPE_SEQUENCE));
+        ChartPanel panel = new ChartPanel(chart);
+        panel.setBorder(BorderFactory.createTitledBorder("Chart Panel"));
+        panel.setMouseWheelEnabled(true);
+        panel.setPreferredSize(new Dimension(400,400));
+        return panel;
     }
     
     private void saveJTableAsCSVActionPerformed(ActionEvent evt) throws IOException{
@@ -654,6 +861,7 @@ public class MyJXTable  {
         //Create and set up the content pane.
         JComponent newContentPane = new MyJXTable(BAR_NUMS,address).initUI();
         newContentPane.setOpaque(true); //content panes must be opaque
+//        newContentPane.setBorder(BorderFactory.createTitledBorder("Table Panel"));
 //        frame = new JXFrame("EventLog", true);
         frame.setContentPane(newContentPane);
         
@@ -700,7 +908,7 @@ public class MyJXTable  {
             }
         });  
 //        frame.add(scroll, BorderLayout.CENTER);
-        frame.add(bar,BorderLayout.EAST);
+//        newContentPane.add(bar,BorderLayout.EAST);
     }
     
     public static void setMarkerList(List<Integer> err, List<Integer> invErr, List<Integer> insuffErr, 

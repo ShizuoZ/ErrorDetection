@@ -151,6 +151,8 @@ public class DEEventLog {
     private DECaseList cases;
     private DEActivityList acts;
     private static int eventNum = 0;
+    
+    public List<Double> actstd = new ArrayList();
 
     public DEEventLog(String filename) throws BiffException, IOException {
         if (DEEventLog.f == null) {init();}
@@ -458,12 +460,16 @@ public class DEEventLog {
                     if (z <= actdurSTDbnd[0] || actdurSTDbnd[1] <= z) {
                         e.mark(ErrorType.ACT_DUR_STD, z);
                         errors.add(e);
+                        System.out.println("Std: " + z);
                     }
+                    if(z!= Double.POSITIVE_INFINITY) actstd.add(z);
                 }
             }
         }
-
         return errors;
+    }
+    public List<Double> getactStd(){
+        return actstd;
     }
     private List<DEEvent> actDurKnn() {
         List<DEEvent> errors = new LinkedList<DEEvent>();
@@ -909,5 +915,22 @@ public class DEEventLog {
     
     public int getEventNum(){
         return this.eventNum;
+    }
+    
+    public void setbnd(double[] p){
+        this.insuffThresh  = (int)p[0];
+        this.actdurSTDbnd[0]  = p[1];
+        this.actdurSTDbnd[1]  = p[2];
+        this.actdurKNNmax     = p[3];
+        this.actdurCLUSTbnd[0] = p[4];
+        this.actdurCLUSTbnd[1] = p[5];
+        this.actdurCLUSTtest = (int)p[6];
+        this.acttimeSTDbnd[0] = p[7];
+        this.acttimeSTDbnd[1] = p[8];
+        this.acttimeKNNmax    = p[9];
+        this.caseSTDbnd[0]     = p[10];
+        this.caseSTDbnd[1]     = p[11];
+        this.caseRANGEbnd[0]   = p[12];
+        this.caseRANGEbnd[1]   = p[13];
     }
 }

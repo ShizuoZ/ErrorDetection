@@ -8,14 +8,11 @@ import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
-import java.awt.GridLayout;
 import java.awt.Paint;
-import java.awt.Point;
 import java.awt.Rectangle;
 import java.awt.ScrollPane;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.awt.event.KeyEvent;
 import java.awt.event.WindowEvent;
 import java.awt.image.BufferedImage;
 import java.awt.image.Raster;
@@ -28,7 +25,6 @@ import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.io.LineNumberReader;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -47,7 +43,6 @@ import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
 import javax.swing.JComponent;
-import javax.swing.JEditorPane;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
@@ -62,7 +57,11 @@ import javax.swing.JTextField;
 import javax.swing.JTextPane;
 import javax.swing.JViewport;
 import javax.swing.ListSelectionModel;
+import javax.swing.LookAndFeel;
 import javax.swing.RowFilter;
+import javax.swing.SwingUtilities;
+import javax.swing.UIManager;
+import javax.swing.UnsupportedLookAndFeelException;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 import javax.swing.filechooser.FileNameExtensionFilter;
@@ -77,7 +76,6 @@ import org.jdesktop.swingx.action.AbstractActionExt;
 import org.jdesktop.swingx.decorator.ColorHighlighter;
 import org.jdesktop.swingx.decorator.HighlightPredicate;
 import org.jdesktop.swingx.decorator.HighlighterFactory;
-import org.jdesktop.swingx.sort.RowFilters;
 import org.jdesktop.swingx.table.ColumnFactory;
 import org.jdesktop.swingx.table.TableColumnExt;
 import org.jdesktop.swingx.decorator.ComponentAdapter;
@@ -90,8 +88,6 @@ import org.jfree.chart.plot.XYPlot;
 import org.jfree.chart.renderer.xy.StandardXYBarPainter;
 import org.jfree.chart.renderer.xy.XYBarRenderer;
 import org.jfree.data.statistics.HistogramDataset;
-
-
 
 /**
  * This SimpleJXTableDemo is a very simple example of how to use the extended features of the
@@ -133,11 +129,11 @@ public class MyJXTable  {
     private JPanel parameter;
     private JPanel charts;
     private static String address;
-    private static List<DEEvent> eventlog;
     private static TableRowSorter<TableModel> sorter;
     private static SampleTableModel model;
     private static ListIndexBar bar;
     private static JXFrame frame = new JXFrame("Error Detection", true);
+    private static DEEventLog deeventLog;  
     
     public MyJXTable() {
         this.address = "/Day&Night.csv";
@@ -149,12 +145,12 @@ public class MyJXTable  {
         this.address = filename;
         this.bar = new ListIndexBar(BAR_NUMS);
     }
-    public MyJXTable(int num, String filename, List<DEEvent> e) {
-        this.BAR_NUMS = num;
-        this.address = filename;
-        this.eventlog = e;
-        this.bar = new ListIndexBar(BAR_NUMS);
-    }
+//    public MyJXTable(int num, String filename, List<DEEvent> e) {
+//        this.BAR_NUMS = num;
+//        this.address = filename;
+//        this.eventlog = e;
+//        this.bar = new ListIndexBar(BAR_NUMS);
+//    }
           
  
     private JComponent initUI() {
@@ -199,7 +195,7 @@ public class MyJXTable  {
             String[] folders = address.split("/");
             String filename = folders[folders.length - 1];
             model.loadDataFromCSV(address);
-    //        model.loadDataFromEventLog(eventlog);
+//            model.loadDataFromEventLog(deeventLog.events());
         }
         else{
             model.loadDefaultData();
@@ -212,9 +208,9 @@ public class MyJXTable  {
 //        this.initTable();
     }
     
-    public void setEventLog(List<DEEvent> e){
-        this.eventlog = e;
-    }
+//    public void setEventLog(List<DEEvent> e){
+//        this.eventlog = e;
+//    }
     
     /** For demo purposes, the special features of the JXTable are configured here. There is
      * otherwise no reason not to do this in initTable().
@@ -351,25 +347,13 @@ public class MyJXTable  {
         button_ExportFile.setFont(new java.awt.Font("Lucida Grande", 0, 10));
         button_ImportFile.setFont(new java.awt.Font("Lucida Grande", 0, 10));
         button_hide.setFont(new java.awt.Font("Lucida Grande", 0, 10));
-//        JMenu menu = new JMenu("File");
-//        JMenuBar menuBar = new JMenuBar();
-//        menuBar.add(menu);
-//        menu.setMnemonic(KeyEvent.VK_A);
-//        menu.getAccessibleContext().setAccessibleDescription(
-//            "Manage the table");
-//        JMenuItem menuItem_ImportFile = new JMenuItem("import file",
-//                KeyEvent.VK_T);
-//                menuItem_ImportFile.getAccessibleContext().setAccessibleDescription(
-//                        "This doesn't really do anything");
+
         button_ImportFile.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 menuItem_ImportFileActionPerformed(evt);
             }
         });
-//        JMenuItem menuItem_ExportFile = new JMenuItem("export file",
-//                KeyEvent.VK_T);
-//                menuItem_ImportFile.getAccessibleContext().setAccessibleDescription(
-//                        "This doesn't really do anything");
+
         button_ExportFile.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 try {
@@ -379,8 +363,13 @@ public class MyJXTable  {
                 }
             }
         });
-//        menu.add(menuItem_ImportFile);
-//        menu.add(menuItem_ExportFile);
+        
+        button_hide.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                parameter.setVisible(false);
+                button_hide.setText("display config");
+            }
+        });
         
         String[] filterlist = {"Default","All Errors","invalid & insuff errors","Duration errors","Time errors","Case errors"};
         final JComboBox filterbox = new JComboBox(filterlist);
@@ -604,47 +593,89 @@ public class MyJXTable  {
             }
         });
         
-        
+        String[] chartlist = {" durstd    "," timestd   "," casestd   "};
+        final JComboBox chartbox = new JComboBox(chartlist);
+        chartbox.setSelectedIndex(0);
+        JLabel t1 = new JLabel("Files:");
+        JLabel t2 = new JLabel("ErrorType:");
+        JLabel t3 = new JLabel("ChartType:");
 //        config.add(fileChooser);
 //        jxTable.setRowSorter(sorter);
-//        config.add(button_hide);
+        config.add(t1);
         config.add(button_ImportFile);
         config.add(button_ExportFile);
 //        config.add(control);
 //        config.add(sorting);
 //        config.add(horiz);
+        config.add(t2);
         config.add(filterbox);  
-       
+        config.add(t3);
+        config.add(chartbox);
         return config;
     }
     
     private JPanel initParameterPanel(){
         JLabel l1 = new JLabel("insuffThreshold: ");
-        JTextField t1 = new JTextField(3);
+        JTextField t1 = new JTextField("30");
+//        t1.setText("3");
         JLabel l2 = new JLabel("actdurSTDbnd: ");
-        JTextField t2 = new JTextField(3);
-        JTextField t3 = new JTextField(3);
+        JTextField t2 = new JTextField("-2.5");
+        JTextField t3 = new JTextField("2.5");
         JLabel l3 = new JLabel("actdurknnmax: ");
-        JTextField t4 = new JTextField(3);
+        JTextField t4 = new JTextField("2.5");
         JLabel l4 = new JLabel("actdurCLUSTbnd: ");
-        JTextField t5 = new JTextField(3);
-        JTextField t6 = new JTextField(3);
+        JTextField t5 = new JTextField("-2.5");
+        JTextField t6 = new JTextField("2.5");
         JLabel l5 = new JLabel("actdurCLUSTtest: ");
-        JTextField t7 = new JTextField(3);
+        JTextField t7 = new JTextField("5");
         JLabel l6 = new JLabel("acttimeSTDbnd: ");
-        JTextField t8 = new JTextField(3);
-        JTextField t9 = new JTextField(3);
+        JTextField t8 = new JTextField("-2");
+        JTextField t9 = new JTextField("2");
         JLabel l7 = new JLabel("acttimeKNNmax: ");
-        JTextField t10 = new JTextField(3);
+        JTextField t10 = new JTextField("2");
         JLabel l8 = new JLabel("caseSTDbnd: ");
-        JTextField t11 = new JTextField(3);
-        JTextField t12 = new JTextField(3);
+        JTextField t11 = new JTextField("-1.5");
+        JTextField t12 = new JTextField("1.5");
         JLabel l9 = new JLabel("caseRANGEbnd: ");
-        JTextField t13 = new JTextField(3);
-        JTextField t14 = new JTextField(3);
+        JTextField t13 = new JTextField("-1.5");
+        JTextField t14 = new JTextField("1.5");
         
         JButton b = new JButton("apply");
         JButton h = new JButton("hide");
+        b.setFont(new java.awt.Font("Lucida Grande", 0, 10));
+        h.setFont(new java.awt.Font("Lucida Grande", 0, 10));
+        
+        b.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                double[] p = new double[14];
+                p[0] = Double.parseDouble(t1.getText());
+                p[1] = Double.parseDouble(t2.getText());
+                p[2] = Double.parseDouble(t3.getText());
+                p[3] = Double.parseDouble(t4.getText());
+                p[4] = Double.parseDouble(t5.getText());
+                p[5] = Double.parseDouble(t6.getText());
+                p[6] = Double.parseDouble(t7.getText());
+                p[7] = Double.parseDouble(t8.getText());
+                p[8] = Double.parseDouble(t9.getText());
+                p[9] = Double.parseDouble(t10.getText());
+                p[10] = Double.parseDouble(t11.getText());
+                p[11] = Double.parseDouble(t12.getText());
+                p[12] = Double.parseDouble(t13.getText());
+                p[13] = Double.parseDouble(t14.getText());
+                deeventLog.setbnd(p);
+                initUI();
+                frame.pack();
+                h.setText("display config");
+            }
+        });
+        
+        h.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                parameter.setVisible(false);
+                frame.pack();
+                h.setText("display config");
+            }
+        });
         GroupLayout parameterLayout = new GroupLayout(parameter);
         parameter.setLayout(parameterLayout);
         parameter.setBorder(BorderFactory.createTitledBorder("Parameter Panel"));
@@ -746,6 +777,7 @@ public class MyJXTable  {
     private ChartPanel initChartPanel() {
         // dataset
         HistogramDataset dataset = new HistogramDataset();
+        if(deeventLog == null || deeventLog.events().size() == 0) {
         Raster raster = image.getRaster();
         final int w = image.getWidth();
         final int h = image.getHeight();
@@ -756,7 +788,46 @@ public class MyJXTable  {
         dataset.addSeries("Green", r, BINS);
         r = raster.getSamples(0, 0, w, h, 2, r);
         dataset.addSeries("Blue", r, BINS);
+    }
+        else { 
+            double[] std = loadSTD();
+            double[] cur = new double[1000];
+            for(int i = 0; i < 1000; i++) cur[i] = 2.15;
+            dataset.addSeries("distribution", std, BINS/2);
+            dataset.addSeries("current", cur, BINS/2);
+            }
         // chart
+        JFreeChart chart = ChartFactory.createHistogram("standard deviation", "Value",
+            "Count", dataset, PlotOrientation.VERTICAL, true, true, false);
+        chart.getPlot().setBackgroundPaint( new Color(0, 255, 0, 0) );
+        chart.getPlot().setBackgroundAlpha(1.0f);
+        XYPlot plot = (XYPlot) chart.getPlot();
+        XYBarRenderer renderer = (XYBarRenderer) plot.getRenderer();
+        renderer.setBarPainter(new StandardXYBarPainter());
+        // translucent red, green & blue
+        Paint[] paintArray = {
+            new Color(0x80ff0000, true),
+            new Color(0x80000000, true),
+            new Color(0x800000ff, true)
+        };
+        plot.setDrawingSupplier(new DefaultDrawingSupplier(
+            paintArray,
+            DefaultDrawingSupplier.DEFAULT_FILL_PAINT_SEQUENCE,
+            DefaultDrawingSupplier.DEFAULT_OUTLINE_PAINT_SEQUENCE,
+            DefaultDrawingSupplier.DEFAULT_STROKE_SEQUENCE,
+            DefaultDrawingSupplier.DEFAULT_OUTLINE_STROKE_SEQUENCE,
+            DefaultDrawingSupplier.DEFAULT_SHAPE_SEQUENCE));
+        ChartPanel panel = new ChartPanel(chart);
+        panel.setBorder(BorderFactory.createTitledBorder("Chart Panel"));
+        panel.setMouseWheelEnabled(true);
+        panel.setPreferredSize(new Dimension(400,400));
+        return panel;
+    }
+    
+    private void refreshChart(double[] data){
+        double[] std = loadSTD();
+        HistogramDataset dataset = new HistogramDataset();
+        dataset.addSeries("STD", loadSTD(),std.length);
         JFreeChart chart = ChartFactory.createHistogram("Histogram", "Value",
             "Count", dataset, PlotOrientation.VERTICAL, true, true, false);
         chart.getPlot().setBackgroundPaint( new Color(0, 255, 0, 0) );
@@ -777,11 +848,18 @@ public class MyJXTable  {
             DefaultDrawingSupplier.DEFAULT_STROKE_SEQUENCE,
             DefaultDrawingSupplier.DEFAULT_OUTLINE_STROKE_SEQUENCE,
             DefaultDrawingSupplier.DEFAULT_SHAPE_SEQUENCE));
-        ChartPanel panel = new ChartPanel(chart);
-        panel.setBorder(BorderFactory.createTitledBorder("Chart Panel"));
-        panel.setMouseWheelEnabled(true);
-        panel.setPreferredSize(new Dimension(400,400));
-        return panel;
+        charts = new ChartPanel(chart);
+        charts.setBorder(BorderFactory.createTitledBorder("Chart Panel"));
+//        charts.setMouseWheelEnabled(true);
+        charts.setPreferredSize(new Dimension(400,400));
+    }
+    
+    private double[] loadSTD(){
+        double[] std = new double[deeventLog.actstd.size()];
+        for(int i = 0; i < std.length; i++){
+            std[i] = deeventLog.actstd.get(i);
+        }
+        return std;
     }
     
     private void saveJTableAsCSVActionPerformed(ActionEvent evt) throws IOException{
@@ -957,9 +1035,18 @@ public class MyJXTable  {
         //creating and showing this application's GUI.
         javax.swing.SwingUtilities.invokeLater(new Runnable() {
             public void run() {
-                createAndShowGUI();
+                createAndShowGUI();  
             }
         });
+        try {
+               UIManager.setLookAndFeel("com.sun.java.swing.plaf.nimbus.NimbusLookAndFeel");
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        
+        SwingUtilities.updateComponentTreeUI(frame);
+//        frame.pack();
+
     }
     
     private void menuItem_ImportFileActionPerformed(java.awt.event.ActionEvent evt){
@@ -974,10 +1061,11 @@ public class MyJXTable  {
     }
     
     private static void import_display(String address){
-        DEEventLog deeventLog;  
+//        DEEventLog deeventLog;  
         try {        
             deeventLog = new DEEventLog(address);
             List<DEEvent> errors = deeventLog.detectError();
+            System.out.println("detecting");
             List<DEEvent> invErrors = deeventLog.invError();
             List<DEEvent> durErrors = deeventLog.DurError();
             List<DEEvent> TimeErrors = deeventLog.TimeError();
@@ -1043,7 +1131,7 @@ public class MyJXTable  {
             };
             deeventLog.resetThreshold();            
             System.out.println("Marker numbers: "+deeventLog.getEventNum());
-            MyJXTable myJXTable = new MyJXTable(deeventLog.getEventNum(),address,deeventLog.events());
+            MyJXTable myJXTable = new MyJXTable(deeventLog.getEventNum(),address);//,deeventLog.events());
             myJXTable.setMarkerList(errMarkers, invErrMarkers, insuffErrMarkers, 
                     durErrMarkers, timeErrMarkers, caseErrMarkers,
                     errMarkersLight, invErrMarkersLight, insuffErrMarkersLight, 
@@ -1098,7 +1186,7 @@ public class MyJXTable  {
                     addColumn(col);
                 }
                 System.out.println("column established!");
-                for(DEEvent e : eventlog) {
+                for(DEEvent e : log) {
                     String[] attr = { "" + e.caseID(), "" + e.activity(), "" + e.start(), "" + e.end(),
                     "" + e.midTime(), "" + e.duration(), "" + (e.isInvalid()?1:0), "" + (e.isInsufficient()?1:0),
                     "" + e.errors()[0], "" + e.errors()[1], "" + e.errors()[2], "" + e.errors()[3], "" + e.errors()[4],

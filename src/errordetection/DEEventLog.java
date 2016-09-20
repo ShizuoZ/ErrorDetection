@@ -460,7 +460,7 @@ public class DEEventLog {
                     if (z <= actdurSTDbnd[0] || actdurSTDbnd[1] <= z) {
                         e.mark(ErrorType.ACT_DUR_STD, z);
                         errors.add(e);
-                        System.out.println("Std: " + z);
+//                        System.out.println("Std: " + z);
                     }
                     if(z!= Double.POSITIVE_INFINITY) actstd.add(z);
                 }

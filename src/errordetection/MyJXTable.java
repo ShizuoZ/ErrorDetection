@@ -134,6 +134,7 @@ public class MyJXTable  {
     private static ListIndexBar bar;
     private static JXFrame frame = new JXFrame("Error Detection", true);
     private static DEEventLog deeventLog;  
+    private double[] parArray;
     
     public MyJXTable() {
         this.address = "/Day&Night.csv";
@@ -173,7 +174,7 @@ public class MyJXTable  {
         //Add the scroll pane to this panel.
         content.add(tabbedPane, BorderLayout.SOUTH);
         
-        content.add(initParameterPanel(), BorderLayout.WEST);
+        content.add(initParameterPanel(parArray), BorderLayout.WEST);
         content.add(initChartPanel(), BorderLayout.CENTER);
         
         content.add(initConfigPanel(jxTable), BorderLayout.NORTH);
@@ -614,7 +615,7 @@ public class MyJXTable  {
         return config;
     }
     
-    private JPanel initParameterPanel(){
+    private JPanel initParameterPanel(double[] pararray){
         JLabel l1 = new JLabel("insuffThreshold: ");
         JTextField t1 = new JTextField("30");
 //        t1.setText("3");
@@ -644,7 +645,23 @@ public class MyJXTable  {
         JButton h = new JButton("hide");
         b.setFont(new java.awt.Font("Lucida Grande", 0, 10));
         h.setFont(new java.awt.Font("Lucida Grande", 0, 10));
-        
+        if(pararray == null) ;
+        else {
+            t1.setText(pararray[0]+"");
+            t2.setText(pararray[1]+"");
+            t3.setText(pararray[2]+"");
+            t4.setText(pararray[3]+"");
+            t5.setText(pararray[4]+"");
+            t6.setText(pararray[5]+"");
+            t7.setText(pararray[6]+"");
+            t8.setText(pararray[7]+"");
+            t9.setText(pararray[8]+"");
+            t10.setText(pararray[9]+"");
+            t11.setText(pararray[10]+"");
+            t12.setText(pararray[11]+"");
+            t13.setText(pararray[12]+"");
+            t13.setText(pararray[13]+"");
+        }
         b.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 double[] p = new double[14];
@@ -662,10 +679,22 @@ public class MyJXTable  {
                 p[11] = Double.parseDouble(t12.getText());
                 p[12] = Double.parseDouble(t13.getText());
                 p[13] = Double.parseDouble(t14.getText());
+                parArray = new double[14];
+                parArray = p;
                 deeventLog.setbnd(p);
-                initUI();
-                frame.pack();
-                h.setText("display config");
+                initApplicationDefaults();
+                javax.swing.SwingUtilities.invokeLater(new Runnable() {
+                    public void run() {
+                        createAndShowGUI();  
+                    }
+                });
+                try {
+                       UIManager.setLookAndFeel("com.sun.java.swing.plaf.nimbus.NimbusLookAndFeel");
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+//                SwingUtilities.updateComponentTreeUI(frame);
+//                frame.pack();
             }
         });
         

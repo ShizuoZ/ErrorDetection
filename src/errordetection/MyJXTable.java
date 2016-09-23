@@ -129,12 +129,11 @@ public class MyJXTable  {
     private JPanel parameter;
     private JPanel charts;
     private static String address;
-    private static TableRowSorter<TableModel> sorter;
     private static SampleTableModel model;
     private static ListIndexBar bar;
     private static JXFrame frame = new JXFrame("Error Detection", true);
     private static DEEventLog deeventLog;  
-    private double[] parArray;
+    private static double[] parArray;
     
     public MyJXTable() {
         this.address = "/Day&Night.csv";
@@ -146,10 +145,19 @@ public class MyJXTable  {
         this.address = filename;
         this.bar = new ListIndexBar(BAR_NUMS);
     }
+    
+    private MyJXTable(int num, String filename, double[] p, DEEventLog e){
+        this.BAR_NUMS = num;
+        this.address = filename;
+        this.parArray = p;
+        this.deeventLog = e;
+    }
+    
 //    public MyJXTable(int num, String filename, List<DEEvent> e) {
 //        this.BAR_NUMS = num;
 //        this.address = filename;
 //        this.eventlog = e;
+    
 //        this.bar = new ListIndexBar(BAR_NUMS);
 //    }
           
@@ -174,7 +182,7 @@ public class MyJXTable  {
         //Add the scroll pane to this panel.
         content.add(tabbedPane, BorderLayout.SOUTH);
         
-        content.add(initParameterPanel(parArray), BorderLayout.WEST);
+        content.add(initParameterPanel(), BorderLayout.WEST);
         content.add(initChartPanel(), BorderLayout.CENTER);
         
         content.add(initConfigPanel(jxTable), BorderLayout.NORTH);
@@ -615,52 +623,56 @@ public class MyJXTable  {
         return config;
     }
     
-    private JPanel initParameterPanel(double[] pararray){
+    private JPanel initParameterPanel(){
         JLabel l1 = new JLabel("insuffThreshold: ");
-        JTextField t1 = new JTextField("30");
+        final JTextField t1 = new JTextField("30");
 //        t1.setText("3");
         JLabel l2 = new JLabel("actdurSTDbnd: ");
-        JTextField t2 = new JTextField("-2.5");
-        JTextField t3 = new JTextField("2.5");
+        final JTextField t2 = new JTextField("-2.5");
+        final JTextField t3 = new JTextField("2.5");
         JLabel l3 = new JLabel("actdurknnmax: ");
-        JTextField t4 = new JTextField("2.5");
+        final JTextField t4 = new JTextField("2.5");
         JLabel l4 = new JLabel("actdurCLUSTbnd: ");
-        JTextField t5 = new JTextField("-2.5");
-        JTextField t6 = new JTextField("2.5");
+        final JTextField t5 = new JTextField("-2.5");
+        final JTextField t6 = new JTextField("2.5");
         JLabel l5 = new JLabel("actdurCLUSTtest: ");
-        JTextField t7 = new JTextField("5");
+        final JTextField t7 = new JTextField("5");
         JLabel l6 = new JLabel("acttimeSTDbnd: ");
-        JTextField t8 = new JTextField("-2");
-        JTextField t9 = new JTextField("2");
+        final JTextField t8 = new JTextField("-2");
+        final JTextField t9 = new JTextField("2");
         JLabel l7 = new JLabel("acttimeKNNmax: ");
-        JTextField t10 = new JTextField("2");
+        final JTextField t10 = new JTextField("2");
         JLabel l8 = new JLabel("caseSTDbnd: ");
-        JTextField t11 = new JTextField("-1.5");
-        JTextField t12 = new JTextField("1.5");
+        final JTextField t11 = new JTextField("-1.5");
+        final JTextField t12 = new JTextField("1.5");
         JLabel l9 = new JLabel("caseRANGEbnd: ");
-        JTextField t13 = new JTextField("-1.5");
-        JTextField t14 = new JTextField("1.5");
+        final JTextField t13 = new JTextField("-1.5");
+        final JTextField t14 = new JTextField("1.5");
         
         JButton b = new JButton("apply");
         JButton h = new JButton("hide");
         b.setFont(new java.awt.Font("Lucida Grande", 0, 10));
         h.setFont(new java.awt.Font("Lucida Grande", 0, 10));
-        if(pararray == null) ;
+        
+        if(parArray == null) System.out.println("null parArray");
         else {
-            t1.setText(pararray[0]+"");
-            t2.setText(pararray[1]+"");
-            t3.setText(pararray[2]+"");
-            t4.setText(pararray[3]+"");
-            t5.setText(pararray[4]+"");
-            t6.setText(pararray[5]+"");
-            t7.setText(pararray[6]+"");
-            t8.setText(pararray[7]+"");
-            t9.setText(pararray[8]+"");
-            t10.setText(pararray[9]+"");
-            t11.setText(pararray[10]+"");
-            t12.setText(pararray[11]+"");
-            t13.setText(pararray[12]+"");
-            t13.setText(pararray[13]+"");
+            for(int i = 0; i< 14; i++)
+                    System.out.println(parArray[i]);
+            t1.setText(parArray[0]+"");
+            System.out.print(parArray[0]+"");
+            t2.setText(parArray[1]+"");
+            t3.setText(parArray[2]+"");
+            t4.setText(parArray[3]+"");
+            t5.setText(parArray[4]+"");
+            t6.setText(parArray[5]+"");
+            t7.setText(parArray[6]+"");
+            t8.setText(parArray[7]+"");
+            t9.setText(parArray[8]+"");
+            t10.setText(parArray[9]+"");
+            t11.setText(parArray[10]+"");
+            t12.setText(parArray[11]+"");
+            t13.setText(parArray[12]+"");
+            t13.setText(parArray[13]+"");
         }
         b.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
@@ -679,9 +691,12 @@ public class MyJXTable  {
                 p[11] = Double.parseDouble(t12.getText());
                 p[12] = Double.parseDouble(t13.getText());
                 p[13] = Double.parseDouble(t14.getText());
-                parArray = new double[14];
-                parArray = p;
+                
                 deeventLog.setbnd(p);
+                parArray = new double[14];
+                parArray = deeventLog.getbnd();
+                for(int i = 0; i< 14; i++)
+                    System.out.println(parArray[i]);
                 initApplicationDefaults();
                 javax.swing.SwingUtilities.invokeLater(new Runnable() {
                     public void run() {
@@ -886,7 +901,8 @@ public class MyJXTable  {
     private double[] loadSTD(){
         double[] std = new double[deeventLog.actstd.size()];
         for(int i = 0; i < std.length; i++){
-            std[i] = deeventLog.actstd.get(i);
+            // get corresponding std from activity list hashtable
+            std[i] = deeventLog.actstd.get(deeventLog.events().get(0).activity()).get(i);
         }
         return std;
     }

@@ -152,7 +152,7 @@ public class DEEventLog {
     private DEActivityList acts;
     private static int eventNum = 0;
     
-    public List<Double> actstd = new ArrayList();
+    public HashMap<String,List<Double>> actstd = new HashMap();
 
     public DEEventLog(String filename) throws BiffException, IOException {
         if (DEEventLog.f == null) {init();}
@@ -462,15 +462,25 @@ public class DEEventLog {
                         errors.add(e);
 //                        System.out.println("Std: " + z);
                     }
-                    if(z!= Double.POSITIVE_INFINITY) actstd.add(z);
+                    if(z!= Double.POSITIVE_INFINITY) {
+                        String actname = act.activity();
+                        if(!actstd.containsKey(actname)){
+                            List<Double> a = new ArrayList();
+                            a.add(z);
+                            actstd.put(actname,a);
+                        }
+                        actstd.get(actname).add(z);
+                    }
                 }
             }
         }
         return errors;
     }
-    public List<Double> getactStd(){
+    
+    public HashMap getactStd(){
         return actstd;
     }
+    
     private List<DEEvent> actDurKnn() {
         List<DEEvent> errors = new LinkedList<DEEvent>();
 
@@ -932,5 +942,24 @@ public class DEEventLog {
         this.caseSTDbnd[1]     = p[11];
         this.caseRANGEbnd[0]   = p[12];
         this.caseRANGEbnd[1]   = p[13];
+    }
+    
+    public double[] getbnd(){
+        double[] p = new double[14];
+        p[0] = this.insuffThresh;
+        p[1] = this.actdurSTDbnd[0];
+        p[2] = this.actdurSTDbnd[1];
+        p[3] = this.actdurKNNmax;
+        p[4] = this.actdurCLUSTbnd[0];
+        p[5] = this.actdurCLUSTbnd[1];
+        p[6] = this.actdurCLUSTtest;
+        p[7] = this.acttimeSTDbnd[0];
+        p[8] = this.acttimeSTDbnd[1];
+        p[9] = this.acttimeKNNmax;
+        p[10] = this.caseSTDbnd[0];
+        p[11] = this.caseSTDbnd[1];
+        p[12] = this.caseRANGEbnd[0];
+        p[13] = this.caseRANGEbnd[1];
+        return p;
     }
 }

@@ -157,4 +157,8 @@ public class DEEvent {
     public void setStd(double STD){
         this.durstd = STD;
     }
+    
+    public double getStd(){
+        return durstd;
+    }
 }

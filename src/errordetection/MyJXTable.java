@@ -134,6 +134,10 @@ public class MyJXTable  {
     private static JXFrame frame = new JXFrame("Error Detection", true);
     private static DEEventLog deeventLog;  
     private static double[] parArray;
+    private static double currentstd = 0;
+    private static DEEvent currentevent;
+    private HistogramDataset dataset = new HistogramDataset();
+    private JFreeChart chart;
     
     public MyJXTable() {
         this.address = "/Day&Night.csv";
@@ -261,11 +265,6 @@ public class MyJXTable  {
         // comparators are good for special situations where the default comparator doesn't
         // understand our data.
         
-        // setting the custom comparator 
-//        jxTable.getColumnExt("ELEVATION").setComparator(numberComparator);
-//        jxTable.getColumnExt("TEMPERATURE").setComparator(numberComparator);
-        
-        
         // We'll add a highlighter to offset different row numbers
         // Note the setHighlighters() takes an array parameter; you can chain these together.
         jxTable.setHighlighters(
@@ -273,11 +272,7 @@ public class MyJXTable  {
         
         jxTable.addHighlighter(new ColorHighlighter(HighlightPredicate.ROLLOVER_ROW, Color.BLACK,
                 Color.WHITE));
-        
-        // add a filter: include countries starting with a only
-//        int col = jxTable.getColumn("COUNTRY").getModelIndex();
-//        jxTable.setRowFilter(RowFilters.regexFilter(0, "^A", col));
-        
+       
         // resize all the columns in the table to fit their contents
         // this is available as an item in the column control drop down as well, so the user can trigger it.
         int margin = 5;
@@ -287,12 +282,21 @@ public class MyJXTable  {
         // we can set a max size; if -1, the column is forced to be as large as necessary for the
         // text
         margin = 10;
-        int max = -1;
-        // JW: don't - all column indices are view coordinates
-        // JW: maybe we need xtable api to take a TableColumn as argument?
-        //jxTable.packColumn(jxTable.getColumnExt("COUNTRY").getModelIndex(), margin, max);
-//        int viewIndex = jxTable.convertColumnIndexToView(jxTable.getColumnExt("COUNTRY").getModelIndex());
-//        jxTable.packColumn(viewIndex, margin, max);
+        jxTable.addMouseListener(new java.awt.event.MouseAdapter() {
+            @Override
+            public void mouseClicked(java.awt.event.MouseEvent evt) {
+                int row = jxTable.rowAtPoint(evt.getPoint());
+                currentstd = deeventLog.events().get(row).getStd();
+                System.out.println("row:" + row + "std:" + currentstd);
+                double[] std = loadSTD();
+                double[] cur = new double[2000];
+                for(int i = 0; i < cur.length; i++) cur[i] = currentstd;
+                dataset = new HistogramDataset();
+                dataset.addSeries("current", cur, BINS/2);
+                dataset.addSeries("distribution", std, BINS/2);
+                ((XYPlot) chart.getPlot()).setDataset(dataset);
+            }
+        });
     }
     
     /** This shows off some additional JXTable configuration, controlled by checkboxes in a Panel. */
@@ -819,29 +823,27 @@ public class MyJXTable  {
     }
 
     private ChartPanel initChartPanel() {
-        // dataset
-        HistogramDataset dataset = new HistogramDataset();
         if(deeventLog == null || deeventLog.events().size() == 0) {
-        Raster raster = image.getRaster();
-        final int w = image.getWidth();
-        final int h = image.getHeight();
-        double[] r = new double[w * h];
-        r = raster.getSamples(0, 0, w, h, 0, r);
-        dataset.addSeries("Red", r, BINS);
-        r = raster.getSamples(0, 0, w, h, 1, r);
-        dataset.addSeries("Green", r, BINS);
-        r = raster.getSamples(0, 0, w, h, 2, r);
-        dataset.addSeries("Blue", r, BINS);
-    }
+            Raster raster = image.getRaster();
+            final int w = image.getWidth();
+            final int h = image.getHeight();
+            double[] r = new double[w * h];
+            r = raster.getSamples(0, 0, w, h, 0, r);
+            dataset.addSeries("Red", r, BINS);
+            r = raster.getSamples(0, 0, w, h, 1, r);
+            dataset.addSeries("Green", r, BINS);
+            r = raster.getSamples(0, 0, w, h, 2, r);
+            dataset.addSeries("Blue", r, BINS);
+        }
         else { 
             double[] std = loadSTD();
             double[] cur = new double[1000];
-            for(int i = 0; i < 1000; i++) cur[i] = 2.15;
-            dataset.addSeries("distribution", std, BINS/2);
+            for(int i = 0; i < 1000; i++) cur[i] = currentevent.getStd();
             dataset.addSeries("current", cur, BINS/2);
+            dataset.addSeries("distribution", std, BINS/2);   
             }
         // chart
-        JFreeChart chart = ChartFactory.createHistogram("standard deviation", "Value",
+        chart = ChartFactory.createHistogram("standard deviation", "Value",
             "Count", dataset, PlotOrientation.VERTICAL, true, true, false);
         chart.getPlot().setBackgroundPaint( new Color(0, 255, 0, 0) );
         chart.getPlot().setBackgroundAlpha(1.0f);
@@ -850,8 +852,8 @@ public class MyJXTable  {
         renderer.setBarPainter(new StandardXYBarPainter());
         // translucent red, green & blue
         Paint[] paintArray = {
-            new Color(0x80ff0000, true),
-            new Color(0x80000000, true),
+            new Color(0x80ff000f, true),
+            new Color(0x80000ff0, true),
             new Color(0x800000ff, true)
         };
         plot.setDrawingSupplier(new DefaultDrawingSupplier(
@@ -868,41 +870,15 @@ public class MyJXTable  {
         return panel;
     }
     
-    private void refreshChart(double[] data){
-        double[] std = loadSTD();
-        HistogramDataset dataset = new HistogramDataset();
-        dataset.addSeries("STD", loadSTD(),std.length);
-        JFreeChart chart = ChartFactory.createHistogram("Histogram", "Value",
-            "Count", dataset, PlotOrientation.VERTICAL, true, true, false);
-        chart.getPlot().setBackgroundPaint( new Color(0, 255, 0, 0) );
-        chart.getPlot().setBackgroundAlpha(1.0f);
-        XYPlot plot = (XYPlot) chart.getPlot();
-        XYBarRenderer renderer = (XYBarRenderer) plot.getRenderer();
-        renderer.setBarPainter(new StandardXYBarPainter());
-        // translucent red, green & blue
-        Paint[] paintArray = {
-            new Color(0x80ff0000, true),
-            new Color(0x8000ff00, true),
-            new Color(0x800000ff, true)
-        };
-        plot.setDrawingSupplier(new DefaultDrawingSupplier(
-            paintArray,
-            DefaultDrawingSupplier.DEFAULT_FILL_PAINT_SEQUENCE,
-            DefaultDrawingSupplier.DEFAULT_OUTLINE_PAINT_SEQUENCE,
-            DefaultDrawingSupplier.DEFAULT_STROKE_SEQUENCE,
-            DefaultDrawingSupplier.DEFAULT_OUTLINE_STROKE_SEQUENCE,
-            DefaultDrawingSupplier.DEFAULT_SHAPE_SEQUENCE));
-        charts = new ChartPanel(chart);
-        charts.setBorder(BorderFactory.createTitledBorder("Chart Panel"));
-//        charts.setMouseWheelEnabled(true);
-        charts.setPreferredSize(new Dimension(400,400));
-    }
-    
     private double[] loadSTD(){
-        double[] std = new double[deeventLog.actstd.size()];
-        for(int i = 0; i < std.length; i++){
-            // get corresponding std from activity list hashtable
-            std[i] = deeventLog.actstd.get(deeventLog.events().get(0).activity()).get(i);
+        List<Double> tmp = new ArrayList();
+        tmp = deeventLog.allactstd;
+//        tmp = deeventLog.actstd.get(currentevent.activity());
+//        System.out.println(currentevent.getStd());
+        double[] std = new double[tmp.size()];
+        for(int i = 0; i <  std.length; i++){
+            std[i] = tmp.get(i);
+//            System.out.println(std[i]);
         }
         return std;
     }
@@ -1176,6 +1152,8 @@ public class MyJXTable  {
             };
             deeventLog.resetThreshold();            
             System.out.println("Marker numbers: "+deeventLog.getEventNum());
+            currentevent = deeventLog.events().get(0);
+            currentstd = currentevent.getStd();
             MyJXTable myJXTable = new MyJXTable(deeventLog.getEventNum(),address);//,deeventLog.events());
             myJXTable.setMarkerList(errMarkers, invErrMarkers, insuffErrMarkers, 
                     durErrMarkers, timeErrMarkers, caseErrMarkers,

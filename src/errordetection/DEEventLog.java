@@ -153,6 +153,7 @@ public class DEEventLog {
     private static int eventNum = 0;
     
     public HashMap<String,List<Double>> actstd = new HashMap();
+    public List<Double> allactstd = new ArrayList<Double>();
 
     public DEEventLog(String filename) throws BiffException, IOException {
         if (DEEventLog.f == null) {init();}
@@ -469,7 +470,10 @@ public class DEEventLog {
                             a.add(z);
                             actstd.put(actname,a);
                         }
+//                        System.out.println(z);
                         actstd.get(actname).add(z);
+                        allactstd.add(z);
+                        e.setStd(z);
                     }
                 }
             }

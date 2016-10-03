@@ -524,7 +524,7 @@ public class DEEventLog {
                 for (DEEvent e : knn.keySet()) {
                     if (!e.isInvalid()) {
                         z = ((double) knn.get(e) - avg) / std;
-                        if (actdurKNNmax <= z) {
+                        if (3*std <= z) {
                             e.mark(ErrorType.ACT_DUR_KNN, z);
                             errors.add(e);
                         }

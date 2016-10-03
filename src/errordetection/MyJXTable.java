@@ -10,7 +10,6 @@ import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.Paint;
 import java.awt.Rectangle;
-import java.awt.ScrollPane;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.WindowEvent;
@@ -21,8 +20,6 @@ import java.beans.PropertyChangeListener;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.URL;
@@ -33,7 +30,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.regex.Pattern;
 import javax.imageio.ImageIO;
 
 import javax.swing.AbstractAction;
@@ -46,25 +42,17 @@ import javax.swing.JComponent;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
-import javax.swing.JMenu;
-import javax.swing.JMenuBar;
-import javax.swing.JMenuItem;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTabbedPane;
-import javax.swing.JTable;
 import javax.swing.JTextField;
 import javax.swing.JTextPane;
 import javax.swing.JViewport;
 import javax.swing.ListSelectionModel;
-import javax.swing.LookAndFeel;
-import javax.swing.RowFilter;
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
-import javax.swing.UnsupportedLookAndFeelException;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
-import javax.swing.filechooser.FileNameExtensionFilter;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableModel;
 import javax.swing.table.TableRowSorter;
@@ -695,18 +683,24 @@ public class MyJXTable  {
                 p[11] = Double.parseDouble(t12.getText());
                 p[12] = Double.parseDouble(t13.getText());
                 p[13] = Double.parseDouble(t14.getText());
-                
                 deeventLog.setbnd(p);
                 parArray = new double[14];
                 parArray = deeventLog.getbnd();
-                for(int i = 0; i< 14; i++)
-                    System.out.println(parArray[i]);
                 initApplicationDefaults();
-                javax.swing.SwingUtilities.invokeLater(new Runnable() {
-                    public void run() {
-                        createAndShowGUI();  
-                    }
-                });
+                t1.setText(parArray[0]+"");
+                t2.setText(parArray[1]+"");
+                t3.setText(parArray[2]+"");
+                t4.setText(parArray[3]+"");
+                t5.setText(parArray[4]+"");
+                t6.setText(parArray[5]+"");
+                t7.setText(parArray[6]+"");
+                t8.setText(parArray[7]+"");
+                t9.setText(parArray[8]+"");
+                t10.setText(parArray[9]+"");
+                t11.setText(parArray[10]+"");
+                t12.setText(parArray[11]+"");
+                t13.setText(parArray[12]+"");
+                t13.setText(parArray[13]+"");
                 try {
                        UIManager.setLookAndFeel("com.sun.java.swing.plaf.nimbus.NimbusLookAndFeel");
                     } catch (Exception e) {
@@ -1115,7 +1109,7 @@ public class MyJXTable  {
                 caseErrMarkers.add(e.index());
             };
             for(DEEvent e : insuffErrors){
-                insuffErrMarkers.add(e.index());
+                insuffErrMarkers.add(e.index()-1);
             };
 
             deeventLog.loosenThreshold();

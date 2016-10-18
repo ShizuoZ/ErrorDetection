@@ -17,6 +17,7 @@ import java.awt.event.ActionListener;
 import java.awt.event.ComponentEvent;
 import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
+import java.awt.event.MouseAdapter;
 import java.awt.event.WindowEvent;
 import java.awt.geom.Ellipse2D;
 import java.awt.image.BufferedImage;
@@ -118,10 +119,13 @@ public class MyJXTable  {
     private static JXFrame frame = new JXFrame("Error Detection", true);
     private static DEEventLog deeventLog;  
     private static double currentstd = 0;
+    private static double currentknn = 0;
     private static DEEvent currentevent;
     private HistogramDataset dataset = new HistogramDataset();
     private JFreeChart chart;
     private JComponent content;
+    private MouseAdapter a1;
+    private MouseAdapter a2;
     
     public MyJXTable() {
         this.address = "/Day&Night.csv";
@@ -231,21 +235,6 @@ public class MyJXTable  {
         // we can set a max size; if -1, the column is forced to be as large as necessary for the
         // text
         margin = 10;
-        jxTable.addMouseListener(new java.awt.event.MouseAdapter() {
-            @Override
-            public void mouseClicked(java.awt.event.MouseEvent evt) {
-                int row = jxTable.rowAtPoint(evt.getPoint());
-                currentstd = deeventLog.events().get(row).getStd();
-                System.out.println("row:" + row + "std:" + currentstd);
-                double[] std = loadSTD();
-                double[] cur = new double[2000];
-                for(int i = 0; i < cur.length; i++) cur[i] = currentstd;
-                dataset = new HistogramDataset();
-                dataset.addSeries("current", cur, BINS/2);
-                dataset.addSeries("distribution", std, BINS/2);
-                ((XYPlot) chart.getPlot()).setDataset(dataset);
-            }
-        });
     }
     
     /** This shows off some additional JXTable configuration, controlled by checkboxes in a Panel. */
@@ -565,6 +554,24 @@ public class MyJXTable  {
             public void actionPerformed(ActionEvent e){
                 String item = (String)chartbox.getSelectedItem();
                 switch(item){
+                    case "durstd":
+                        a1 = new java.awt.event.MouseAdapter() {
+                            @Override
+                            public void mouseClicked(java.awt.event.MouseEvent evt) {
+                                int row = jxTable.rowAtPoint(evt.getPoint());
+                                currentstd = deeventLog.events().get(row).getStd();
+                                System.out.println("row:" + row + "std:" + currentstd);
+                                double[] std = loadSTD();
+                                double[] cur = new double[2000];
+                                for(int i = 0; i < cur.length; i++) cur[i] = currentstd;
+                                dataset = new HistogramDataset();
+                                dataset.addSeries("current", cur, BINS/2);
+                                dataset.addSeries("distribution", std, BINS/2);
+                                ((XYPlot) chart.getPlot()).setDataset(dataset);
+                            }
+                        };
+                        jxTable.addMouseListener(a1);
+                        break;
                     case "durknn":
 //                        double[] dur = loadDur();
 //                        dataset = new HistogramDataset();
@@ -603,8 +610,8 @@ public class MyJXTable  {
                         XYSeries series2 = new XYSeries("knn value");
                         XYSeriesCollection dataset2 = new XYSeriesCollection();
                         System.out.println(deeventLog.knnstd);
-                        series2.add(0,deeventLog.knnstd*2);
-                        series2.add(40000,deeventLog.knnstd*2);
+                        series2.add(0,deeventLog.knnstd );
+                        series2.add(40000,deeventLog.knnstd );
                         dataset2.addSeries(series2);
                         XYItemRenderer renderer2 = new XYLineAndShapeRenderer(true, false); 
                         chart = ChartFactory.createScatterPlot("Duration KNN", "dur",
@@ -633,10 +640,32 @@ public class MyJXTable  {
 //                        charts.setBorder(BorderFactory.createTitledBorder("Chart Panel"));
                         charts.setMouseWheelEnabled(true);
                         charts.setPreferredSize(new Dimension(400,400));
+                        jxTable.removeMouseListener(a1);                   
+                        a2 = new java.awt.event.MouseAdapter() {
+                            @Override
+                            public void mouseClicked(java.awt.event.MouseEvent evt) {
+                                int row = jxTable.rowAtPoint(evt.getPoint());
+                                currentknn = deeventLog.events().get(row).getKnn();
+                                System.out.println("row:" + row + "knn:" + currentknn);
+                                XYSeries series3 = new XYSeries("selected");
+                                XYSeriesCollection dataset2 = new XYSeriesCollection();
+                                series3.add(0,currentknn);
+                                series3.add(40000,currentknn);
+                                dataset2.addSeries(series3);    
+                                XYPlot plot = (XYPlot) chart.getPlot();
+                                XYItemRenderer renderer2 = new XYLineAndShapeRenderer(true, false); 
+                                renderer2.setSeriesPaint(0, Color.BLACK);
+                                plot.setDataset(2, dataset2);
+                                plot.setRenderer(2, renderer2);
+                            }
+                        };
+                        jxTable.addMouseListener(a2);
+                        jxTable.revalidate();
                         content.add(charts, BorderLayout.CENTER);
                         content.revalidate();
                         content.repaint();
                         System.out.println("Finish");
+                        break;
                 }
             }
         });

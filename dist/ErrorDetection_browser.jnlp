@@ -8,7 +8,7 @@
   </information>
   <resources>
     <j2se version="1.6+" href="http://java.sun.com/products/autodl/j2se"/>
-    <jar href="ErrorDetection.jar" size="103546" download="eager" />
+    <jar href="ErrorDetection.jar" size="104474" download="eager" />
     <jar href="lib/jcommon-1.0.23.jar" size="330246" download="eager" />
     <jar href="lib/jfreechart-1.5.0.jar" size="1631030" download="eager" />
     <jar href="lib/jxl.jar" size="725735" download="eager" />

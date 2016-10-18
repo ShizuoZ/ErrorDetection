@@ -446,10 +446,10 @@ public class DEEventLog {
                         allactstd.add(z);
                         e.setStd(z);
                     }
-                    if(z >= 3 * std){
+                    if(z <= actdurSTDbnd[0] || actdurSTDbnd[1] <= z){
                         durstdErrors.add(e);
                     }
-                    else if (z >= 2 * std){
+                    else if (z <= actdurSTDbnd[0]/2 || actdurSTDbnd[1]/2 <= z){
                         durstdWarnings.add(e);
                     }
                 }
@@ -518,10 +518,10 @@ public class DEEventLog {
                             allactknn.add(z);
                             e.setKnn(z);
                         }
-                        if(z >= 3 * std) {
+                        if(z >= actdurKNNmax) {
                             durknnErrors.add(e);
                         }
-                        else if(z >= 2 * std){
+                        else if(z >= actdurKNNmax/2){
                             durknnWarnings.add(e);
                         }
                     }

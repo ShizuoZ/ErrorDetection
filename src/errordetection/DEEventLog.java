@@ -151,10 +151,20 @@ public class DEEventLog {
     private DECaseList cases;
     private DEActivityList acts;
     private static int eventNum = 0;
+    private double std = 0.0;
+    public double knnstd;
     
     public HashMap<String,List<Double>> actstd = new HashMap();
     public List<Double> allactstd = new ArrayList<Double>();
-
+    public HashMap<String,List<Double>> actknn = new HashMap();
+    public List<Double> allactknn = new ArrayList<Double>();
+    private List<DEEvent> insuffErrors = new LinkedList<DEEvent>();
+    private List<DEEvent> durstdErrors = new LinkedList<DEEvent>();
+    private List<DEEvent> durstdWarnings = new LinkedList<DEEvent>();
+    private List<DEEvent> durknnErrors = new LinkedList<DEEvent>();
+    private List<DEEvent> durknnWarnings = new LinkedList<DEEvent>();
+    private List<DEEvent> caseknnErrors = new LinkedList<DEEvent>();
+    private List<DEEvent> caseknnWarnings = new LinkedList<DEEvent>();
     public DEEventLog(String filename) throws BiffException, IOException {
         if (DEEventLog.f == null) {init();}
 //        Workbook workbook = Workbook.getWorkbook(new File(filename));
@@ -313,7 +323,7 @@ public class DEEventLog {
             }
         }
         mergeUniquely(errors, insuff());
-
+        insuffErrors.addAll(errors);
         // STATISTICAL
         for (ErrorType et : ets) {
             switch (et) {
@@ -360,41 +370,8 @@ public class DEEventLog {
         }
     }
     
-    public List<DEEvent> invError(){
-        List<DEEvent> errors = new LinkedList<DEEvent>();
-        for (DEEvent e : events) {
-            e.flushErrors();
-            if (e.isInvalid()) {
-                errors.add(e);
-            }
-        }
-        return errors;
-    }
-    
     public List<DEEvent> insuffError(){
-        List<DEEvent> errors = new LinkedList<DEEvent>();
-        mergeUniquely(errors, insuff());
-        for(DEEvent e : errors){
-            if(invError().contains(e)) errors.remove(e);
-        }
-        return errors;
-    }
-    
-    public void loosenThreshold(){
-        this.insuffThresh  = 20;
-        this.actdurSTDbnd[0]  = -2;
-        this.actdurSTDbnd[1]  = 2;
-        this.actdurKNNmax     = 2;
-        this.actdurCLUSTbnd[0] = -2;
-        this.actdurCLUSTbnd[1] = 2;
-        this.actdurCLUSTtest = 5;
-        this.acttimeSTDbnd[0] = -2;
-        this.acttimeSTDbnd[1] = 2;
-        this.acttimeKNNmax    = 2;
-        this.caseSTDbnd[0]     = -2;
-        this.caseSTDbnd[1]     = 2;
-        this.caseRANGEbnd[0]   = -2;
-        this.caseRANGEbnd[1]   = 2;
+        return insuffErrors;
     }
     
     public void resetThreshold(){
@@ -414,24 +391,19 @@ public class DEEventLog {
         this.caseRANGEbnd[1]   = 2;
     }
     
-    public List<DEEvent> DurError(){
-        List<DEEvent> errors = new LinkedList<DEEvent>();
-        mergeUniquely(errors, actDurStd());
-        mergeUniquely(errors, actDurKnn());
-        mergeUniquely(errors, actDurClust());
-        return errors;
+    public List<DEEvent> durstdErrors(){
+        return durstdErrors;
     }
-    public List<DEEvent> TimeError(){
-        List<DEEvent> errors = new LinkedList<DEEvent>();
-        mergeUniquely(errors, actTimeStd());
-        mergeUniquely(errors, actTimeKnn());
-        return errors;
+    
+    public List<DEEvent> durstdWarnings(){
+        return durstdWarnings;
     }
-    public List<DEEvent> CaseError(){
-        List<DEEvent> errors = new LinkedList<DEEvent>();
-        mergeUniquely(errors, caseStd());
-        mergeUniquely(errors, caseRange());
-        return errors;
+    
+    public List<DEEvent> durknnErrors(){
+        return durknnErrors;
+    }
+    public List<DEEvent> durknnWarnings(){
+        return durknnWarnings;
     }
     private List<DEEvent> insuff() {
         List<DEEvent> errors = new LinkedList<DEEvent>();
@@ -463,17 +435,22 @@ public class DEEventLog {
                         errors.add(e);
 //                        System.out.println("Std: " + z);
                     }
-                    if(z!= Double.POSITIVE_INFINITY) {
+                    if(z != Double.POSITIVE_INFINITY) {
                         String actname = act.activity();
                         if(!actstd.containsKey(actname)){
                             List<Double> a = new ArrayList();
                             a.add(z);
                             actstd.put(actname,a);
                         }
-//                        System.out.println(z);
                         actstd.get(actname).add(z);
                         allactstd.add(z);
                         e.setStd(z);
+                    }
+                    if(z >= 3 * std){
+                        durstdErrors.add(e);
+                    }
+                    else if (z >= 2 * std){
+                        durstdWarnings.add(e);
                     }
                 }
             }
@@ -515,26 +492,45 @@ public class DEEventLog {
                     }
                 }
                 std = (long) Math.sqrt(std / n);
-
+                knnstd = std;
                 if (std == 0) {
                     continue;
                 }
+                
 
                 // CALCULATE Z-SCORE & MARK
                 for (DEEvent e : knn.keySet()) {
                     if (!e.isInvalid()) {
                         z = ((double) knn.get(e) - avg) / std;
-                        if (3*std <= z) {
+                        if (z >= actdurKNNmax) {
                             e.mark(ErrorType.ACT_DUR_KNN, z);
                             errors.add(e);
+                        }
+                        if(z!= Double.POSITIVE_INFINITY) {
+                            String actname = act.activity();
+                            if(!actknn.containsKey(actname)){
+                                List<Double> a = new ArrayList();
+                                a.add(z);
+                                actknn.put(actname,a);
+                            }
+    //                        System.out.println(z);
+                            actknn.get(actname).add(z);
+                            allactknn.add(z);
+                            e.setKnn(z);
+                        }
+                        if(z >= 3 * std) {
+                            durknnErrors.add(e);
+                        }
+                        else if(z >= 2 * std){
+                            durknnWarnings.add(e);
                         }
                     }
                 }
             }
         }
-
         return errors;
     }
+    
     private List<DEEvent> actDurClust() {
         List<DEEvent> errors = new LinkedList<DEEvent>();
 
@@ -890,21 +886,13 @@ public class DEEventLog {
             BufferedReader lnr = new BufferedReader(new InputStreamReader(fstream));
             String line = lnr.readLine();
             String[] cols = line.split(",");
-            int COL_NUM = cols.length; 
             int tmpIdx = 0;
             while (( line = lnr.readLine()) != null) {
                 String[] attr = line.split(",");
-//                for(int i = 0; i < COL_NUM-1; i++){
-//                    System.out.println("attr"+i+":"+attr[i]);
-//                }
                 Integer tmpID = (attr[0]!=null || !attr[0].isEmpty()) ? Integer.valueOf(attr[0]) : null;
-//                System.out.print("ID: "+tmpID);
                 String tmpAct = (attr[1]!=null || !attr[1].isEmpty()) ? attr[1] : null;
-//                System.out.print("\tACTIVITY: "+tmpAct);
                 Long tmpStr = (attr[2]!="" && !attr[2].isEmpty()) ? Long.valueOf(toS(attr[2])) : null;
-//                System.out.print("\tSTART TIME: "+tmpStr);
                 Long tmpEnd = (attr.length >= 4 && attr[3] != "") ? Long.valueOf(toS(attr[3])) : null; 
-//                System.out.println("\tEND TIME: "+tmpEnd);
                 this.add(new DEEvent(tmpID,tmpAct,tmpStr,tmpEnd,tmpIdx++));
             }
         }catch ( Exception e ) {

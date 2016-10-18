@@ -9,10 +9,16 @@ import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.Paint;
+import java.awt.Point;
 import java.awt.Rectangle;
+import java.awt.Shape;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.ComponentEvent;
+import java.awt.event.ItemEvent;
+import java.awt.event.ItemListener;
 import java.awt.event.WindowEvent;
+import java.awt.geom.Ellipse2D;
 import java.awt.image.BufferedImage;
 import java.awt.image.Raster;
 import java.beans.PropertyChangeEvent;
@@ -30,6 +36,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import javafx.scene.shape.Line;
 import javax.imageio.ImageIO;
 
 import javax.swing.AbstractAction;
@@ -69,63 +76,52 @@ import org.jdesktop.swingx.table.TableColumnExt;
 import org.jdesktop.swingx.decorator.ComponentAdapter;
 import org.jfree.chart.ChartFactory;
 import org.jfree.chart.ChartPanel;
+import org.jfree.chart.ChartUtilities;
 import org.jfree.chart.JFreeChart;
+import org.jfree.chart.axis.NumberAxis;
+import org.jfree.chart.axis.ValueAxis;
+import org.jfree.chart.plot.CategoryPlot;
 import org.jfree.chart.plot.DefaultDrawingSupplier;
 import org.jfree.chart.plot.PlotOrientation;
 import org.jfree.chart.plot.XYPlot;
+import org.jfree.chart.renderer.category.LineAndShapeRenderer;
 import org.jfree.chart.renderer.xy.StandardXYBarPainter;
 import org.jfree.chart.renderer.xy.XYBarRenderer;
+import org.jfree.chart.renderer.xy.XYItemRenderer;
+import org.jfree.chart.renderer.xy.XYLineAndShapeRenderer;
 import org.jfree.data.statistics.HistogramDataset;
+import org.jfree.data.xy.XYDataset;
+import org.jfree.data.xy.XYSeries;
+import org.jfree.data.xy.XYSeriesCollection;
 
-/**
- * This SimpleJXTableDemo is a very simple example of how to use the extended features of the
- * JXTable in the SwingX project. The major features are covered, step-by-step. You can run
- * this demo from the command-line without arguments
- * java org.jdesktop.demo.sample.SimpleJXTableDemo
- *
- * If looking at the source, the interesting code is in configureJXTable().
- *
- * This is derived from the SimpleTableDemo in the Swing tutorial.
- *
- * @author Patrick Wright (with help from the Swing tutorial :))
- */
 public class MyJXTable  {
     private static final Color MARKER_COLOUR = Color.GREEN;
-    private static final Color INVALID_COLOUR = Color.RED;
-    private static final Color DUR_COLOUR = Color.ORANGE;
-    private static final Color TIME_COLOUR = Color.BLUE;
-    private static final Color CASE_COLOUR = Color.MAGENTA;
     private static final Color ERROR_COLOUR = Color.RED;
     private static final Color WARNING_COLOUR = Color.YELLOW;
     private static int BAR_NUMS = 100;
     private static Integer[] INDEX_ARRAY = new Integer[]{4, 15, 32, 36, 58, 74, 92};
     private static List<Integer> ERROR_INDEX_LIST = new LinkedList(Arrays.asList(INDEX_ARRAY));
-    private static List INVALID_ERROR_LIST = new LinkedList(Arrays.asList(INDEX_ARRAY));
-    private static List DUR_ERROR_LIST = new LinkedList(Arrays.asList(INDEX_ARRAY));
-    private static List TIME_ERROR_LIST = new LinkedList(Arrays.asList(INDEX_ARRAY));
-    private static List CASE_ERROR_LIST = new LinkedList(Arrays.asList(INDEX_ARRAY));
-    private static List INSUFF_ERROR_LIST = new LinkedList(Arrays.asList(INDEX_ARRAY));
-    private static List ERROR_INDEX_LIST_LIGHT = new LinkedList(Arrays.asList(INDEX_ARRAY));
-    private static List INVALID_ERROR_LIST_LIGHT = new LinkedList(Arrays.asList(INDEX_ARRAY));
-    private static List DUR_ERROR_LIST_LIGHT = new LinkedList(Arrays.asList(INDEX_ARRAY));
-    private static List TIME_ERROR_LIST_LIGHT = new LinkedList(Arrays.asList(INDEX_ARRAY));
-    private static List CASE_ERROR_LIST_LIGHT = new LinkedList(Arrays.asList(INDEX_ARRAY));
-    private static List INSUFF_ERROR_LIST_LIGHT = new LinkedList(Arrays.asList(INDEX_ARRAY));
+    private static List<Integer> DUR_STD_ERRORS_LIST = new LinkedList(Arrays.asList(INDEX_ARRAY));
+    private static List<Integer> DUR_STD_WARNINGS_LIST = new LinkedList(Arrays.asList(INDEX_ARRAY));
+    private static List<Integer> DUR_KNN_ERRORS_LIST = new LinkedList(Arrays.asList(INDEX_ARRAY));
+    private static List<Integer> DUR_KNN_WARNINGS_LIST = new LinkedList(Arrays.asList(INDEX_ARRAY));
+    private static List<Integer> CASE_ERROR_LIST = new LinkedList(Arrays.asList(INDEX_ARRAY));
+    private static List<Integer> INSUFF_ERROR_LIST = new LinkedList(Arrays.asList(INDEX_ARRAY));
     private static JXTable jxTable = new JXTable();
     private JFileChooser fileChooser;
     private JPanel config;
     private JPanel parameter;
-    private JPanel charts;
+    private ChartPanel charts;
     private static String address;
     private static SampleTableModel model;
     private static ListIndexBar bar;
     private static JXFrame frame = new JXFrame("Error Detection", true);
     private static DEEventLog deeventLog;  
-    private static double[] parArray;
     private static double currentstd = 0;
     private static DEEvent currentevent;
     private HistogramDataset dataset = new HistogramDataset();
     private JFreeChart chart;
+    private JComponent content;
     
     public MyJXTable() {
         this.address = "/Day&Night.csv";
@@ -138,45 +134,35 @@ public class MyJXTable  {
         this.bar = new ListIndexBar(BAR_NUMS);
     }
     
-    private MyJXTable(int num, String filename, double[] p, DEEventLog e){
+    private MyJXTable(int num, String filename, DEEventLog e){
         this.BAR_NUMS = num;
         this.address = filename;
-        this.parArray = p;
         this.deeventLog = e;
-    }
-    
-//    public MyJXTable(int num, String filename, List<DEEvent> e) {
-//        this.BAR_NUMS = num;
-//        this.address = filename;
-//        this.eventlog = e;
-    
-//        this.bar = new ListIndexBar(BAR_NUMS);
-//    }
-          
+    }      
  
     private JComponent initUI() {
-        JComponent content = new JPanel(new BorderLayout());
+        content = new JPanel(new BorderLayout());
 //        content.setBorder(BorderFactory.createTitledBorder("Error Det"));
         jxTable = initTable();
         configureJXTable(jxTable);
         parameter = new JPanel();
-        charts = new JPanel();
+//        charts = new ChartPanel();
         
         //Create the scroll pane and add the table to it.
         JScrollPane scrollPane = new JScrollPane(jxTable);
+        scrollPane.setPreferredSize(new Dimension(400,400));
         JComponent tabbedPane = new JTabbedPane(3);
         JComponent tablePane = new JPanel(new BorderLayout());
         tablePane.add(scrollPane, BorderLayout.CENTER);
         tablePane.add(bar, BorderLayout.EAST);
+        tablePane.setBackground(Color.WHITE);
         tabbedPane.setBorder(BorderFactory.createTitledBorder("Table Panel"));
         tabbedPane.add("EventView",tablePane);
         tabbedPane.setPreferredSize(new Dimension(400,400));
+        tabbedPane.setBackground(Color.WHITE);
         //Add the scroll pane to this panel.
-        content.add(tabbedPane, BorderLayout.SOUTH);
-        
-        content.add(initParameterPanel(), BorderLayout.WEST);
+        content.add(tabbedPane, BorderLayout.WEST);
         content.add(initChartPanel(), BorderLayout.CENTER);
-        
         content.add(initConfigPanel(jxTable), BorderLayout.NORTH);
         return content;
     }
@@ -191,7 +177,7 @@ public class MyJXTable  {
         model = new SampleTableModel();
         jxTable.setModel(model);
 //        model.loadData();
-        System.out.println("filename: " + this.address);
+//        System.out.println("filename: " + this.address);
         if(address!=null){
             String[] folders = address.split("/");
             String filename = folders[folders.length - 1];
@@ -201,6 +187,7 @@ public class MyJXTable  {
         else{
             model.loadDefaultData();
         }
+        jxTable.setAutoResizeMode(JXTable.AUTO_RESIZE_ALL_COLUMNS);
         return jxTable;
     }
        
@@ -209,39 +196,18 @@ public class MyJXTable  {
 //        this.initTable();
     }
     
-//    public void setEventLog(List<DEEvent> e){
-//        this.eventlog = e;
-//    }
-    
-    /** For demo purposes, the special features of the JXTable are configured here. There is
-     * otherwise no reason not to do this in initTable().
-     */
     private void configureJXTable(JXTable jxTable) {
         // set the number of visible rows
         jxTable.setVisibleRowCount(30);
         // set the number of visible columns
         jxTable.setVisibleColumnCount(8);
-        // This turns horizontal scrolling on or off. If the table is too large for the scrollpane,
-        // and horizontal scrolling is off, columns will be resized to fit within the pane, which can
-        // cause them to be unreadable. Setting this flag causes the table to be scrollable right to left.
+        // Setting this flag causes the table to be scrollable right to left.
         jxTable.setHorizontalScrollEnabled(true);
 
         // This shows the column control on the right-hand of the header.
         // All there is to it--users can now select which columns to view
         jxTable.setColumnControlVisible(true);
-        
-        // our data is pulling in too many columns by default, so let's hide some of them
-        // column visibility is a property of the TableColumnExt class; we can look up a
-        // TCE using a column's display name or its index
-
-        // Sorting by clicking on column headers is on by default. However, the comparison
-        // between rows uses a default compare on the column's type, and elevations
-        // are not sorting how we want.
-        //
-        // We will override the Comparator assigned to the TableColumnExt instance assigned
-        // to the elevation column. TableColumnExt has a property comparator will be used
-        // by JXTable's sort methods. 
-        // By using a custom Comparator we can control how sorting in any column takes place
+     
         Comparator numberComparator = new Comparator() {
             public int compare(Object o1, Object o2) {
                 Double d1 = Double.valueOf(o1 == null ? "0" : (String)o1);
@@ -250,11 +216,6 @@ public class MyJXTable  {
             }
         };
         
-        // comparators are good for special situations where the default comparator doesn't
-        // understand our data.
-        
-        // We'll add a highlighter to offset different row numbers
-        // Note the setHighlighters() takes an array parameter; you can chain these together.
         jxTable.setHighlighters(
                 HighlighterFactory.createSimpleStriping());
         
@@ -291,6 +252,7 @@ public class MyJXTable  {
     private JPanel initConfigPanel(final JXTable jxTable) {
         config = new JPanel();
         config.setBorder(BorderFactory.createTitledBorder("config Panel"));
+        config.setBackground(Color.WHITE);
         FlowLayout fll = (FlowLayout)config.getLayout();
         fll.setAlignment(FlowLayout.LEFT);
         fll.setHgap(30);
@@ -344,10 +306,12 @@ public class MyJXTable  {
         
         JButton button_ExportFile = new JButton("export");
         JButton button_ImportFile = new JButton("import");
+        JButton parameterButton = new JButton("Parameter");
         JButton button_hide = new JButton("hide");
         button_ExportFile.setFont(new java.awt.Font("Lucida Grande", 0, 10));
         button_ImportFile.setFont(new java.awt.Font("Lucida Grande", 0, 10));
         button_hide.setFont(new java.awt.Font("Lucida Grande", 0, 10));
+        parameterButton.setFont(new java.awt.Font("Lucida Grande", 0, 10));
 
         button_ImportFile.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
@@ -372,7 +336,13 @@ public class MyJXTable  {
             }
         });
         
-        String[] filterlist = {"Default","All Errors","invalid & insuff errors","Duration errors","Time errors","Case errors"};
+        parameterButton.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                parameter = initParameterPanel();
+            }
+        });
+        
+        String[] filterlist = {"Default","All Errors","invalid & insuff errors","Duration STD","Duration KNN","Case KNN"};
         final JComboBox filterbox = new JComboBox(filterlist);
         filterbox.setSelectedIndex(0);
         filterbox.addActionListener(new ActionListener(){
@@ -394,7 +364,7 @@ public class MyJXTable  {
                                   Component renderer, 
                                   ComponentAdapter adapter) {
 
-                                  return INVALID_ERROR_LIST.contains(adapter.row);
+                                  return ERROR_INDEX_LIST.contains(adapter.row);
                             }
                         };
                         ColorHighlighter highlighter = new ColorHighlighter(
@@ -407,7 +377,8 @@ public class MyJXTable  {
                                   Component renderer, 
                                   ComponentAdapter adapter) {
 
-                                  return ERROR_INDEX_LIST.contains(adapter.row);
+                                  return DUR_STD_WARNINGS_LIST.contains(adapter.row) ||
+                                          DUR_KNN_WARNINGS_LIST.contains(adapter.row);
                             }
                         };
                         ColorHighlighter highlighterMed = new ColorHighlighter(
@@ -422,9 +393,13 @@ public class MyJXTable  {
                         bar.clearMarkers();
                         bar.clearMedMarkers();
                         bar.setForeground(ERROR_COLOUR);
-//                        bar.addLightMarkers(ERROR_INDEX_LIST);
-                        bar.addMedMarkers(ERROR_INDEX_LIST_LIGHT); 
-                        bar.addMarkers(INVALID_ERROR_LIST);
+                        List<Integer> warnings = new ArrayList();
+                        warnings.addAll(DUR_STD_WARNINGS_LIST);
+                        for(Integer i : DUR_KNN_WARNINGS_LIST){
+                            if(!warnings.contains(i)) warnings.add(i);
+                        }
+                        bar.addMedMarkers(warnings); 
+                        bar.addMarkers(ERROR_INDEX_LIST);
 //                        frame.add(bar);
                         break;
                     case "invalid & insuff errors":
@@ -434,49 +409,34 @@ public class MyJXTable  {
                                   Component renderer, 
                                   ComponentAdapter adapter) {
 
-                                  return INVALID_ERROR_LIST.contains(adapter.row);
-                            }
-                        };
-                        ColorHighlighter highlighterInv = new ColorHighlighter(
-                            myPredicateInv,
-                            ERROR_COLOUR,   // background color
-                            null);       // no change in foreground color
-                         final HighlightPredicate myPredicateInsuff = new HighlightPredicate() {
-                            @Override 
-                            public boolean isHighlighted(
-                                  Component renderer, 
-                                  ComponentAdapter adapter) {
-
-                                  return INSUFF_ERROR_LIST_LIGHT.contains(adapter.row);
+                                  return INSUFF_ERROR_LIST.contains(adapter.row);
                             }
                         };
                         ColorHighlighter highlighterInsuff = new ColorHighlighter(
-                            myPredicateInsuff,
-                            WARNING_COLOUR,   // background color
+                            myPredicateInv,
+                            ERROR_COLOUR,   // background color
                             null);       // no change in foreground color
                         jxTable.setHighlighters(new ColorHighlighter(HighlightPredicate.ROLLOVER_ROW, 
                                 Color.BLACK,
                                 Color.WHITE));
                         jxTable.addHighlighter(highlighterInsuff);
-                        jxTable.addHighlighter(highlighterInv);
                         bar.clearMarkers();
                         bar.clearMedMarkers();
                         bar.setForeground(ERROR_COLOUR);
-//                        bar.addLightMarkers(ERROR_INDEX_LIST);
-                        bar.addMedMarkers(INSUFF_ERROR_LIST_LIGHT); 
-                        bar.addMarkers(INVALID_ERROR_LIST);
+//                        bar.addMedMarkers(INSUFF_ERROR_LIST_LIGHT); 
+                        bar.addMarkers(INSUFF_ERROR_LIST);
                        
 //                        frame.add(bar);
 //                        frame.add(bar);
                         break;
-                    case "Duration errors":
+                    case "Duration STD":
                         final HighlightPredicate myPredicateDur = new HighlightPredicate() {
                             @Override 
                             public boolean isHighlighted(
                                   Component renderer, 
                                   ComponentAdapter adapter) {
 
-                                  return DUR_ERROR_LIST.contains(adapter.row);
+                                  return DUR_STD_ERRORS_LIST.contains(adapter.row);
                             }
                         };
                         ColorHighlighter highlighterDur = new ColorHighlighter(
@@ -489,7 +449,7 @@ public class MyJXTable  {
                                   Component renderer, 
                                   ComponentAdapter adapter) {
 
-                                  return DUR_ERROR_LIST_LIGHT.contains(adapter.row);
+                                  return DUR_STD_WARNINGS_LIST.contains(adapter.row);
                             }
                         };
                         ColorHighlighter highlighterDurLight = new ColorHighlighter(
@@ -507,107 +467,186 @@ public class MyJXTable  {
                         bar.setForeground(ERROR_COLOUR);
 //                        bar.addLightMarkers(ERROR_INDEX_LIST);
                         
-                        bar.addMedMarkers(DUR_ERROR_LIST_LIGHT); 
-                        bar.addMarkers(DUR_ERROR_LIST);
+                        bar.addMedMarkers(DUR_STD_WARNINGS_LIST); 
+                        bar.addMarkers(DUR_STD_ERRORS_LIST);
 //                        frame.add(bar);
                         break;
-                    case "Time errors":
-                        final HighlightPredicate myPredicateTime = new HighlightPredicate() {
-                            @Override 
-                            public boolean isHighlighted(
-                                  Component renderer, 
-                                  ComponentAdapter adapter) {
-
-                                  return TIME_ERROR_LIST.contains(adapter.row);
-                            }
-                        };
-                        ColorHighlighter highlighterTime = new ColorHighlighter(
-                              myPredicateTime,
-                              ERROR_COLOUR,   // background color
-                              null);       // no change in foreground color
-                        final HighlightPredicate myPredicateTimeLight = new HighlightPredicate() {
-                            @Override 
-                            public boolean isHighlighted(
-                                  Component renderer, 
-                                  ComponentAdapter adapter) {
-
-                                  return TIME_ERROR_LIST_LIGHT.contains(adapter.row);
-                            }
-                        };
-                        ColorHighlighter highlighterTimeLight = new ColorHighlighter(
-                              myPredicateTimeLight,
-                              WARNING_COLOUR,   // background color
-                              null);       // no change in foreground color
-                        jxTable.setHighlighters(new ColorHighlighter(HighlightPredicate.ROLLOVER_ROW, 
-                                Color.BLACK,
-                                Color.WHITE));
-                        jxTable.addHighlighter(highlighterTimeLight);
-                        jxTable.addHighlighter(highlighterTime);
-                        bar.clearMarkers();
-                        bar.clearMedMarkers();
-                        bar.setForeground(ERROR_COLOUR);
-                        bar.addMedMarkers(TIME_ERROR_LIST_LIGHT);
-                        bar.addMarkers(TIME_ERROR_LIST);
                         
-//                        frame.add(bar);
-                        break;
-                    case "Case errors":
-                        final HighlightPredicate myPredicateCase = new HighlightPredicate() {
+                    case "Duration KNN":
+                        final HighlightPredicate myPredicateDurKNN = new HighlightPredicate() {
                             @Override 
                             public boolean isHighlighted(
                                   Component renderer, 
                                   ComponentAdapter adapter) {
 
-                                  return CASE_ERROR_LIST.contains(adapter.row);
+                                  return DUR_KNN_ERRORS_LIST.contains(adapter.row);
                             }
                         };
-                        ColorHighlighter highlighterCase = new ColorHighlighter(
-                              myPredicateCase,
+                        ColorHighlighter highlighterDurKNN = new ColorHighlighter(
+                              myPredicateDurKNN,
                               ERROR_COLOUR,   // background color
                               null);       // no change in foreground color
-                        final HighlightPredicate myPredicateCaseLight = new HighlightPredicate() {
+                        final HighlightPredicate myPredicateDurKNNLight = new HighlightPredicate() {
                             @Override 
                             public boolean isHighlighted(
                                   Component renderer, 
                                   ComponentAdapter adapter) {
 
-                                  return CASE_ERROR_LIST_LIGHT.contains(adapter.row);
+                                  return DUR_KNN_WARNINGS_LIST.contains(adapter.row);
                             }
                         };
-                        ColorHighlighter highlighterCaseLight = new ColorHighlighter(
-                              myPredicateCaseLight,
+                        ColorHighlighter highlighterDurKNNLight = new ColorHighlighter(
+                              myPredicateDurKNNLight,
                               WARNING_COLOUR,   // background color
                               null);       // no change in foreground color
                         jxTable.setHighlighters(new ColorHighlighter(HighlightPredicate.ROLLOVER_ROW, 
                                 Color.BLACK,
                                 Color.WHITE));
-                        jxTable.addHighlighter(highlighterCaseLight);
-                        jxTable.addHighlighter(highlighterCase);
+                        jxTable.addHighlighter(highlighterDurKNNLight);
+                        jxTable.addHighlighter(highlighterDurKNN);
+                        
                         bar.clearMarkers();
                         bar.clearMedMarkers();
                         bar.setForeground(ERROR_COLOUR);
-                        bar.addMedMarkers(CASE_ERROR_LIST_LIGHT);
-                        bar.addMarkers(CASE_ERROR_LIST);
+//                        bar.addLightMarkers(ERROR_INDEX_LIST);
+                        
+                        bar.addMedMarkers(DUR_KNN_WARNINGS_LIST); 
+                        bar.addMarkers(DUR_KNN_ERRORS_LIST);
 //                        frame.add(bar);
                         break;
+//                    case "Case errors":
+//                        final HighlightPredicate myPredicateCase = new HighlightPredicate() {
+//                            @Override 
+//                            public boolean isHighlighted(
+//                                  Component renderer, 
+//                                  ComponentAdapter adapter) {
+//
+//                                  return CASE_ERROR_LIST.contains(adapter.row);
+//                            }
+//                        };
+//                        ColorHighlighter highlighterCase = new ColorHighlighter(
+//                              myPredicateCase,
+//                              ERROR_COLOUR,   // background color
+//                              null);       // no change in foreground color
+//                        final HighlightPredicate myPredicateCaseLight = new HighlightPredicate() {
+//                            @Override 
+//                            public boolean isHighlighted(
+//                                  Component renderer, 
+//                                  ComponentAdapter adapter) {
+//
+//                                  return CASE_ERROR_LIST_LIGHT.contains(adapter.row);
+//                            }
+//                        };
+//                        ColorHighlighter highlighterCaseLight = new ColorHighlighter(
+//                              myPredicateCaseLight,
+//                              WARNING_COLOUR,   // background color
+//                              null);       // no change in foreground color
+//                        jxTable.setHighlighters(new ColorHighlighter(HighlightPredicate.ROLLOVER_ROW, 
+//                                Color.BLACK,
+//                                Color.WHITE));
+//                        jxTable.addHighlighter(highlighterCaseLight);
+//                        jxTable.addHighlighter(highlighterCase);
+//                        bar.clearMarkers();
+//                        bar.clearMedMarkers();
+//                        bar.setForeground(ERROR_COLOUR);
+//                        bar.addMedMarkers(CASE_ERROR_LIST_LIGHT);
+//                        bar.addMarkers(CASE_ERROR_LIST);
+////                        frame.add(bar);
+//                        break;
                 }
             }
         });
         
-        String[] chartlist = {" durstd    "," timestd   "," casestd   "};
+        String[] chartlist = {"invalid", "durstd", "durknn", "caseknn"};
         final JComboBox chartbox = new JComboBox(chartlist);
         chartbox.setSelectedIndex(0);
+        chartbox.addActionListener(new ActionListener(){
+            @Override
+            public void actionPerformed(ActionEvent e){
+                String item = (String)chartbox.getSelectedItem();
+                switch(item){
+                    case "durknn":
+//                        double[] dur = loadDur();
+//                        dataset = new HistogramDataset();
+//                        dataset.addSeries("dur", dur, 1024/2);
+////                        System.out.println("Knn size: " + dur.length);
+//                        chart = ChartFactory.createHistogram("standard deviation", "Value",
+//                            "Count", dataset, PlotOrientation.VERTICAL, true, true, false);     
+//                        XYDataset dataset1 = loadDurKnn();
+////                        dataset1.addSeries("knn", knn, BINS/2); 
+//                        XYPlot plot = (XYPlot) charts.getChart().getPlot();
+//                        XYLineAndShapeRenderer renderer = new XYLineAndShapeRenderer();
+//                        XYBarRenderer render1 = new XYBarRenderer();
+//                        Shape shape  = new Ellipse2D.Double(0,0,1,1);
+//                        renderer.setBaseShape(shape);
+//                        render1.setDefaultShadowsVisible(false);
+//                        render1.setShadowXOffset(0);
+//                        render1.setShadowYOffset(0);
+//                        plot.setDataset(0, dataset);
+//                        plot.setRenderer(0, render1); 
+//                        plot.setDataset(1, dataset1);
+//                        plot.setRenderer(1, renderer); 
+//                        plot.setDomainPannable(true);
+//                        plot.setRangePannable(true);
+//                        plot.setRangeAxis(0, new NumberAxis("Series 1"));
+//                        plot.setRangeAxis(1, new NumberAxis("Series 2"));
+////                        plot.setDomainAxis(0, new NumberAxis("Series 1"));
+//                        plot.setDomainAxis(1, new NumberAxis("Series 2"));
+//                        //Map the data to the appropriate axis
+//                        plot.mapDatasetToRangeAxis(0, 0);
+//                        plot.mapDatasetToRangeAxis(1, 1); 
+//                        plot.mapDatasetToDomainAxis(0, 0);
+//                        plot.mapDatasetToDomainAxis(1, 1); 
+                        content.remove(charts);
+                        double std = deeventLog.knnstd;
+                        XYDataset dataset1 = loadDurKnn();
+                        XYSeries series2 = new XYSeries("knn value");
+                        XYSeriesCollection dataset2 = new XYSeriesCollection();
+                        System.out.println(deeventLog.knnstd);
+                        series2.add(0,deeventLog.knnstd*2);
+                        series2.add(40000,deeventLog.knnstd*2);
+                        dataset2.addSeries(series2);
+                        XYItemRenderer renderer2 = new XYLineAndShapeRenderer(true, false); 
+                        chart = ChartFactory.createScatterPlot("Duration KNN", "dur",
+                            "knn", dataset1, PlotOrientation.VERTICAL, true, true, false);     
+                        
+//                        dataset1.addSeries("knn", knn, BINS/2); 
+                        XYPlot plot = (XYPlot) chart.getPlot();
+                        XYItemRenderer renderer = new XYLineAndShapeRenderer(false, true);;
+                        Shape shape  = new Ellipse2D.Double(0,0,1,1);
+                        renderer.setBaseShape(shape);
+                        renderer.setSeriesPaint(0, Color.red);
+                        plot.setDataset(0,dataset1);
+                        plot.setDataset(1,dataset2);
+                        plot.setRenderer(0,renderer); 
+                        plot.setRenderer(1,renderer2);
+//                        plot.setDomainPannable(true);
+//                        plot.setRangePannable(true);
+                        //Map the data to the appropriate axis
+                        plot.mapDatasetToRangeAxis(0,0);
+                        plot.mapDatasetToRangeAxis(0,0); 
+                        chart.setBorderVisible(false);  
+                        chart.setTitle("Duration KNN");
+//                        chart.setBackgroundPaint(new Color(10,255,255,0));  
+//                        chart.setBackgroundImageAlpha(0.9f);
+                        charts = new ChartPanel(chart);
+//                        charts.setBorder(BorderFactory.createTitledBorder("Chart Panel"));
+                        charts.setMouseWheelEnabled(true);
+                        charts.setPreferredSize(new Dimension(400,400));
+                        content.add(charts, BorderLayout.CENTER);
+                        content.revalidate();
+                        content.repaint();
+                        System.out.println("Finish");
+                }
+            }
+        });
         JLabel t1 = new JLabel("Files:");
         JLabel t2 = new JLabel("ErrorType:");
         JLabel t3 = new JLabel("ChartType:");
-//        config.add(fileChooser);
-//        jxTable.setRowSorter(sorter);
         config.add(t1);
         config.add(button_ImportFile);
         config.add(button_ExportFile);
-//        config.add(control);
-//        config.add(sorting);
-//        config.add(horiz);
+        config.add(parameterButton);
         config.add(t2);
         config.add(filterbox);  
         config.add(t3);
@@ -642,16 +681,31 @@ public class MyJXTable  {
         final JTextField t14 = new JTextField("1.5");
         
         JButton b = new JButton("apply");
-        JButton h = new JButton("hide");
+        JButton h = new JButton("close");
         b.setFont(new java.awt.Font("Lucida Grande", 0, 10));
         h.setFont(new java.awt.Font("Lucida Grande", 0, 10));
+        JFrame parameterWindow = new JFrame("parameter");
         
-        if(parArray == null) System.out.println("null parArray");
+        if(deeventLog == null) {
+            System.out.println("null parArray");
+            t1.setText("30");
+            t2.setText("-2.5");
+            t3.setText("2.5");
+            t4.setText("2.5");
+            t5.setText("-2.5");
+            t6.setText("2.5");
+            t7.setText("5");
+            t8.setText("-2");
+            t9.setText("2");
+            t10.setText("2");
+            t11.setText("-1.5");
+            t12.setText("1.5");
+            t13.setText("-1.5");
+            t13.setText("1.5");
+        }
         else {
-            for(int i = 0; i< 14; i++)
-                    System.out.println(parArray[i]);
+            double parArray[] = deeventLog.getbnd();
             t1.setText(parArray[0]+"");
-            System.out.print(parArray[0]+"");
             t2.setText(parArray[1]+"");
             t3.setText(parArray[2]+"");
             t4.setText(parArray[3]+"");
@@ -684,7 +738,7 @@ public class MyJXTable  {
                 p[12] = Double.parseDouble(t13.getText());
                 p[13] = Double.parseDouble(t14.getText());
                 deeventLog.setbnd(p);
-                parArray = new double[14];
+                double[] parArray = new double[14];
                 parArray = deeventLog.getbnd();
                 initApplicationDefaults();
                 t1.setText(parArray[0]+"");
@@ -701,21 +755,13 @@ public class MyJXTable  {
                 t12.setText(parArray[11]+"");
                 t13.setText(parArray[12]+"");
                 t13.setText(parArray[13]+"");
-                try {
-                       UIManager.setLookAndFeel("com.sun.java.swing.plaf.nimbus.NimbusLookAndFeel");
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    }
-//                SwingUtilities.updateComponentTreeUI(frame);
-//                frame.pack();
             }
         });
         
         h.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                parameter.setVisible(false);
-                frame.pack();
-                h.setText("display config");
+                parameterWindow.pack();
+                parameterWindow.setVisible(false);
             }
         });
         GroupLayout parameterLayout = new GroupLayout(parameter);
@@ -800,6 +846,11 @@ public class MyJXTable  {
                 .addComponent(h)
             )
         );
+        parameter.setBackground(Color.WHITE);
+        parameterWindow.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+        parameterWindow.getContentPane().add(parameter,BorderLayout.CENTER);
+        parameterWindow.pack();
+        parameterWindow.setVisible(true);
         return parameter;
     }
     
@@ -839,8 +890,8 @@ public class MyJXTable  {
         // chart
         chart = ChartFactory.createHistogram("standard deviation", "Value",
             "Count", dataset, PlotOrientation.VERTICAL, true, true, false);
-        chart.getPlot().setBackgroundPaint( new Color(0, 255, 0, 0) );
-        chart.getPlot().setBackgroundAlpha(1.0f);
+//        chart.getPlot().setBackgroundPaint( new Color(0, 255, 0, 0) );
+//        chart.getPlot().setBackgroundAlpha(1.0f);
         XYPlot plot = (XYPlot) chart.getPlot();
         XYBarRenderer renderer = (XYBarRenderer) plot.getRenderer();
         renderer.setBarPainter(new StandardXYBarPainter());
@@ -857,18 +908,20 @@ public class MyJXTable  {
             DefaultDrawingSupplier.DEFAULT_STROKE_SEQUENCE,
             DefaultDrawingSupplier.DEFAULT_OUTLINE_STROKE_SEQUENCE,
             DefaultDrawingSupplier.DEFAULT_SHAPE_SEQUENCE));
-        ChartPanel panel = new ChartPanel(chart);
-        panel.setBorder(BorderFactory.createTitledBorder("Chart Panel"));
-        panel.setMouseWheelEnabled(true);
-        panel.setPreferredSize(new Dimension(400,400));
-        return panel;
+        ValueAxis range = plot.getRangeAxis();
+        range.setVisible(false);
+        chart.setBorderVisible(false);  
+        charts = new ChartPanel(chart);
+        charts.setMouseWheelEnabled(true);
+        charts.setPreferredSize(new Dimension(400,400));
+        charts.setBackground(Color.WHITE);
+        charts.setBorder(BorderFactory.createTitledBorder("Chart Panel"));
+        return charts;
     }
     
     private double[] loadSTD(){
         List<Double> tmp = new ArrayList();
         tmp = deeventLog.allactstd;
-//        tmp = deeventLog.actstd.get(currentevent.activity());
-//        System.out.println(currentevent.getStd());
         double[] std = new double[tmp.size()];
         for(int i = 0; i <  std.length; i++){
             std[i] = tmp.get(i);
@@ -877,12 +930,45 @@ public class MyJXTable  {
         return std;
     }
     
+    private double[] loadDur(){
+        List<DEEvent> tmp = new ArrayList();
+        tmp = deeventLog.events();
+        List<Double> dur = new ArrayList();
+//        tmp = deeventLog.actstd.get(currentevent.activity());
+//        System.out.println(currentevent.getStd());
+        for(DEEvent e : tmp){
+            if((!e.isInvalid())&& (!e.isInsufficient())) dur.add((double) e.duration());
+        }
+        double[] res = new double[dur.size()];
+        for(int i = 0; i < dur.size(); i++){
+            res[i] = dur.get(i);
+        }
+        return res;
+    }
+     
+    private XYDataset loadDurKnn(){
+        XYSeries series1 = new XYSeries("durknn");
+        XYSeriesCollection dataset1 = new XYSeriesCollection();
+        List<DEEvent> tmp = new ArrayList();
+        tmp = deeventLog.events();
+        for(DEEvent e : tmp){
+            if((!e.isInvalid())&& (!e.isInsufficient())) {
+                double dur = e.duration();
+//                if(dur > 10000) continue;
+                double knn = e.getKnn();
+                series1.add(dur,knn);
+            }
+        }
+        dataset1.addSeries(series1);
+        return dataset1;
+    }
+    
     private void saveJTableAsCSVActionPerformed(ActionEvent evt) throws IOException{
         int response = fileChooser.showOpenDialog(config);
         if (response == JFileChooser.APPROVE_OPTION) {
             // Read csv file here
             String out_address = fileChooser.getSelectedFile().getAbsolutePath();
-            System.out.println(out_address);
+//            System.out.println(out_address);
             File file = new File(out_address + ".csv");
             ExportJTable e1 = new ExportJTable();
             e1.exportToCSV(jxTable, file);
@@ -891,8 +977,6 @@ public class MyJXTable  {
     
     /**
      * Initialize application wide behaviour.
-     * Here: install a shared custom ColumnFactory to configure 
-     * column titles in all JXTables. 
      */
     private static void initApplicationDefaults() {
         ColumnFactory.setInstance(createColumnFactory());
@@ -953,11 +1037,8 @@ public class MyJXTable  {
 //        final JXFrame frame = new JXFrame("EventLog", true);
         //Create and set up the content pane.
         JComponent newContentPane = new MyJXTable(BAR_NUMS,address).initUI();
-        newContentPane.setOpaque(true); //content panes must be opaque
-//        newContentPane.setBorder(BorderFactory.createTitledBorder("Table Panel"));
-//        frame = new JXFrame("EventLog", true);
         frame.setContentPane(newContentPane);
-        
+        newContentPane.setBackground(Color.WHITE);
         //Display the window.
         frame.pack();
         frame.setLocationRelativeTo(null);
@@ -965,9 +1046,9 @@ public class MyJXTable  {
         frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
         // create the list index bar and configure it
 //        final ListIndexBar bar = new ListIndexBar(BAR_NUMS);
-        bar.setBackground(new Color(0, 255, 0, 0));        
+//        bar.setBackground(new Color(0, 255, 0, 0));        
         bar.setForeground(MARKER_COLOUR);
-        bar.setOpaque(true);
+//        bar.setOpaque(true);
         // add a set of example markers
 //        bar.addMarkers(ERROR_INDEX_LIST);
 
@@ -1004,35 +1085,16 @@ public class MyJXTable  {
 //        newContentPane.add(bar,BorderLayout.EAST);
     }
     
-    public static void setMarkerList(List<Integer> err, List<Integer> invErr, List<Integer> insuffErr, 
-            List<Integer> durErr, List<Integer> timeErr, List<Integer> caseErr,
-            List<Integer> errLight, List<Integer> invErrLight, List<Integer> insuffErrLight, 
-            List<Integer> durErrLight, List<Integer> timeErrLight, List<Integer> caseErrLight
+    public static void setMarkerList(List<Integer> err, List<Integer> insuffErr,
+            List<Integer> durstdErr, List<Integer> durstdWarn, 
+            List<Integer> durknnErr, List<Integer> durknnWarn
             ){
         MyJXTable.ERROR_INDEX_LIST = err;
-        MyJXTable.INVALID_ERROR_LIST = invErr;
-        MyJXTable.DUR_ERROR_LIST = durErr;
-        MyJXTable.TIME_ERROR_LIST = timeErr;
-        MyJXTable.CASE_ERROR_LIST = caseErr;
         MyJXTable.INSUFF_ERROR_LIST = insuffErr;
-        for(Integer e : err){
-            if(!invErr.contains(e)) MyJXTable.ERROR_INDEX_LIST_LIGHT.add(e);
-        }
-        for(Integer e : invErrLight){
-            if(!invErr.contains(e)) MyJXTable.INVALID_ERROR_LIST_LIGHT.add(e);
-        }
-        for(Integer e : durErrLight){
-            if(!durErr.contains(e)) MyJXTable.DUR_ERROR_LIST_LIGHT.add(e);
-        }
-        for(Integer e : timeErrLight){
-            if(!timeErr.contains(e)) MyJXTable.TIME_ERROR_LIST_LIGHT.add(e);
-        }
-        for(Integer e : caseErrLight){
-            if(!caseErr.contains(e)) MyJXTable.CASE_ERROR_LIST_LIGHT.add(e);
-        }
-        for(Integer e : insuffErrLight){
-            if(!invErr.contains(e)) MyJXTable.INSUFF_ERROR_LIST_LIGHT.add(e);
-        }
+        MyJXTable.DUR_STD_ERRORS_LIST = durstdErr;
+        MyJXTable.DUR_STD_WARNINGS_LIST = durstdWarn;
+        MyJXTable.DUR_KNN_ERRORS_LIST = durknnErr;
+        MyJXTable.DUR_KNN_WARNINGS_LIST = durknnWarn;
     }
     
 //    public static void startTable() {
@@ -1069,7 +1131,7 @@ public class MyJXTable  {
         if (response == JFileChooser.APPROVE_OPTION) {
             // Read csv file here
             String address = fileChooser.getSelectedFile().getAbsolutePath();
-            System.out.println(address);
+//            System.out.println(address);
             frame.dispatchEvent(new WindowEvent(frame, WindowEvent.WINDOW_CLOSING));
             import_display(address);
         }
@@ -1081,78 +1143,42 @@ public class MyJXTable  {
             deeventLog = new DEEventLog(address);
             List<DEEvent> errors = deeventLog.detectError();
             System.out.println("detecting");
-            List<DEEvent> invErrors = deeventLog.invError();
-            List<DEEvent> durErrors = deeventLog.DurError();
-            List<DEEvent> TimeErrors = deeventLog.TimeError();
-            List<DEEvent> CaseErrors = deeventLog.CaseError();
             List<DEEvent> insuffErrors = deeventLog.insuffError();
+            List<DEEvent> durstdErrors = deeventLog.durstdErrors();
+            List<DEEvent> durstdWarnings = deeventLog.durstdWarnings();
+            List<DEEvent> durknnErrors = deeventLog.durknnErrors();
+            List<DEEvent> durknnWarnings = deeventLog.durknnWarnings();
             List<Integer> errMarkers = new ArrayList<Integer>();
-            List<Integer> invErrMarkers = new ArrayList<Integer>();
-            List<Integer> durErrMarkers = new ArrayList<Integer>();
-            List<Integer> timeErrMarkers = new ArrayList<Integer>();
-            List<Integer> caseErrMarkers = new ArrayList<Integer>(); 
             List<Integer> insuffErrMarkers = new ArrayList<Integer>();
+            List<Integer> durstdErrMarkers = new ArrayList<Integer>();
+            List<Integer> durstdWarnMarkers = new ArrayList<Integer>();
+            List<Integer> durknnErrMarkers = new ArrayList<Integer>();
+            List<Integer> durknnWarnMarkers = new ArrayList<Integer>();    
 
             for(DEEvent e : errors){
                 errMarkers.add(e.index());
             };
-            for(DEEvent e : invErrors){
-                invErrMarkers.add(e.index());
-            };
-            for(DEEvent e : durErrors){
-                durErrMarkers.add(e.index());
-            };
-            for(DEEvent e : TimeErrors){
-                timeErrMarkers.add(e.index());
-            };
-            for(DEEvent e : CaseErrors){
-                caseErrMarkers.add(e.index());
-            };
             for(DEEvent e : insuffErrors){
-                insuffErrMarkers.add(e.index()-1);
+                insuffErrMarkers.add(e.index());
             };
-
-            deeventLog.loosenThreshold();
-            List<DEEvent> errorsLight = deeventLog.detectError();
-            List<DEEvent> invErrorsLight = deeventLog.invError();
-            List<DEEvent> durErrorsLight = deeventLog.DurError();
-            List<DEEvent> TimeErrorsLight = deeventLog.TimeError();
-            List<DEEvent> CaseErrorsLight = deeventLog.CaseError();
-            List<DEEvent> insuffErrorsLight = deeventLog.insuffError();
-            List<Integer> errMarkersLight = new ArrayList<Integer>();
-            List<Integer> invErrMarkersLight = new ArrayList<Integer>();
-            List<Integer> durErrMarkersLight = new ArrayList<Integer>();
-            List<Integer> timeErrMarkersLight = new ArrayList<Integer>();
-            List<Integer> caseErrMarkersLight = new ArrayList<Integer>(); 
-            List<Integer> insuffErrMarkersLight = new ArrayList<Integer>();
-
-            for(DEEvent e : errorsLight){
-                errMarkersLight.add(e.index());
+            for(DEEvent e : durstdErrors){
+                durstdErrMarkers.add(e.index());
             };
-            for(DEEvent e : invErrorsLight){
-                invErrMarkersLight.add(e.index());
+            for(DEEvent e : durstdWarnings){
+                durstdWarnMarkers.add(e.index());
             };
-            for(DEEvent e : durErrorsLight){
-                durErrMarkersLight.add(e.index());
+            for(DEEvent e : durknnErrors){
+                durknnErrMarkers.add(e.index());
             };
-            for(DEEvent e : TimeErrorsLight){
-                timeErrMarkersLight.add(e.index());
+            for(DEEvent e : durknnWarnings){
+                durknnWarnMarkers.add(e.index());
             };
-            for(DEEvent e : CaseErrorsLight){
-                caseErrMarkersLight.add(e.index());
-            };
-            for(DEEvent e : insuffErrorsLight){
-                insuffErrMarkersLight.add(e.index());
-            };
-            deeventLog.resetThreshold();            
-            System.out.println("Marker numbers: "+deeventLog.getEventNum());
             currentevent = deeventLog.events().get(0);
             currentstd = currentevent.getStd();
             MyJXTable myJXTable = new MyJXTable(deeventLog.getEventNum(),address);//,deeventLog.events());
-            myJXTable.setMarkerList(errMarkers, invErrMarkers, insuffErrMarkers, 
-                    durErrMarkers, timeErrMarkers, caseErrMarkers,
-                    errMarkersLight, invErrMarkersLight, insuffErrMarkersLight, 
-                    durErrMarkersLight, timeErrMarkersLight, caseErrMarkersLight
+            myJXTable.setMarkerList(errMarkers, insuffErrMarkers, 
+                    durstdErrMarkers, durstdWarnMarkers, 
+                    durknnErrMarkers, durknnWarnMarkers
                     );
             myJXTable.createAndShowGUI();
         } catch (BiffException ex) {

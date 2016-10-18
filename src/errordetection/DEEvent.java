@@ -19,6 +19,7 @@ public class DEEvent {
     private int index;
     private Double[] errors;
     private double durstd;
+    private double durknn;
 
     public DEEvent(Integer caseID, String activity,
             Long start, Long end, int index) {
@@ -28,7 +29,8 @@ public class DEEvent {
         this.end = end;
         this.index = index;
         this.durstd = 0.0;
-
+        this.durknn = 0.0;
+        
         errors = new Double[ErrorType.values().length];
         checkInvalid();
     }
@@ -160,5 +162,13 @@ public class DEEvent {
     
     public double getStd(){
         return durstd;
+    }
+    
+    public void setKnn(double knn){
+        this.durknn = knn;
+    }
+    
+    public double getKnn(){
+        return durknn;
     }
 }

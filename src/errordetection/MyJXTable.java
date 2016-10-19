@@ -559,36 +559,37 @@ public class MyJXTable  {
                             @Override
                             public void mouseClicked(java.awt.event.MouseEvent evt) {
                                 int row = jxTable.rowAtPoint(evt.getPoint());
+                                currentevent = deeventLog.events().get(row);
                                 currentstd = deeventLog.events().get(row).getStd();
                                 System.out.println("row:" + row + "std:" + currentstd);
                                 double[] std = loadSTD();
-                                double[] cur = new double[2000];
+                                double[] cur = new double[100];
                                 for(int i = 0; i < cur.length; i++) cur[i] = currentstd;
                                 dataset = new HistogramDataset();
-                                dataset.addSeries("current", cur, BINS/2);
-                                dataset.addSeries("distribution", std, BINS/2);
+                                dataset.addSeries("current", cur, BINS);
+                                dataset.addSeries("distribution", std, BINS);
                                 ((XYPlot) chart.getPlot()).setDataset(dataset);
                             }
                         };
                         jxTable.addMouseListener(a1);
                         break;
-                    case "durknn":
-//                        double[] dur = loadDur();
-//                        dataset = new HistogramDataset();
-//                        dataset.addSeries("dur", dur, 1024/2);
+                    case "durknn":     
 ////                        System.out.println("Knn size: " + dur.length);
-//                        chart = ChartFactory.createHistogram("standard deviation", "Value",
-//                            "Count", dataset, PlotOrientation.VERTICAL, true, true, false);     
+                             
 //                        XYDataset dataset1 = loadDurKnn();
 ////                        dataset1.addSeries("knn", knn, BINS/2); 
 //                        XYPlot plot = (XYPlot) charts.getChart().getPlot();
 //                        XYLineAndShapeRenderer renderer = new XYLineAndShapeRenderer();
-//                        XYBarRenderer render1 = new XYBarRenderer();
+                        double[] dur = loadDur();
+                        dataset = new HistogramDataset();
+                        dataset.addSeries("dur", dur, BINS);
+                        XYBarRenderer render0 = new XYBarRenderer();
 //                        Shape shape  = new Ellipse2D.Double(0,0,1,1);
 //                        renderer.setBaseShape(shape);
-//                        render1.setDefaultShadowsVisible(false);
-//                        render1.setShadowXOffset(0);
-//                        render1.setShadowYOffset(0);
+                        render0.setDefaultShadowsVisible(false);
+                        render0.setShadowXOffset(0);
+                        render0.setShadowYOffset(0);
+                        render0.setSeriesPaint(0, new Color(0x800000ff, true));
 //                        plot.setDataset(0, dataset);
 //                        plot.setRenderer(0, render1); 
 //                        plot.setDataset(1, dataset1);
@@ -610,28 +611,41 @@ public class MyJXTable  {
                         XYSeries series2 = new XYSeries("knn value");
                         XYSeriesCollection dataset2 = new XYSeriesCollection();
                         System.out.println(deeventLog.knnstd);
-                        series2.add(0,deeventLog.knnstd );
-                        series2.add(40000,deeventLog.knnstd );
+                        series2.add(0,deeventLog.knnstd);
+                        series2.add(500,deeventLog.knnstd);
                         dataset2.addSeries(series2);
                         XYItemRenderer renderer2 = new XYLineAndShapeRenderer(true, false); 
+                        renderer2.setSeriesPaint(0, Color.RED);
                         chart = ChartFactory.createScatterPlot("Duration KNN", "dur",
                             "knn", dataset1, PlotOrientation.VERTICAL, true, true, false);     
-                        
+                        chart = ChartFactory.createHistogram("standard deviation", "Value",
+                            "Count", dataset, PlotOrientation.VERTICAL, true, true, false);
 //                        dataset1.addSeries("knn", knn, BINS/2); 
                         XYPlot plot = (XYPlot) chart.getPlot();
-                        XYItemRenderer renderer = new XYLineAndShapeRenderer(false, true);;
-                        Shape shape  = new Ellipse2D.Double(0,0,1,1);
-                        renderer.setBaseShape(shape);
-                        renderer.setSeriesPaint(0, Color.red);
-                        plot.setDataset(0,dataset1);
-                        plot.setDataset(1,dataset2);
-                        plot.setRenderer(0,renderer); 
-                        plot.setRenderer(1,renderer2);
-//                        plot.setDomainPannable(true);
-//                        plot.setRangePannable(true);
-                        //Map the data to the appropriate axis
+                        XYItemRenderer renderer1 = new XYLineAndShapeRenderer(false, true);;
+                        Shape shape  = new Ellipse2D.Double(0,0,0.1,0.1);
+                        renderer1.setBaseShape(shape);
+                        renderer1.setSeriesPaint(0, Color.red);
+                        plot.setDataset(0,dataset);
+                        plot.setDataset(1,dataset1);
+                        plot.setDataset(2,dataset2);
+                        plot.setRenderer(0,render0);
+                        plot.setRenderer(1,renderer1); 
+                        plot.setRenderer(2,renderer2);
+//                        Paint[] paintArray = {
+//                            new Color(0x80ff000f, true),
+//                            new Color(0x80000ff0, true),
+//                            new Color(0x800000ff, true)
+//                        };
+//                        plot.setDrawingSupplier(new DefaultDrawingSupplier(
+//                            paintArray,
+//                            DefaultDrawingSupplier.DEFAULT_FILL_PAINT_SEQUENCE,
+//                            DefaultDrawingSupplier.DEFAULT_OUTLINE_PAINT_SEQUENCE,
+//                            DefaultDrawingSupplier.DEFAULT_STROKE_SEQUENCE,
+//                            DefaultDrawingSupplier.DEFAULT_OUTLINE_STROKE_SEQUENCE,
+//                            DefaultDrawingSupplier.DEFAULT_SHAPE_SEQUENCE));
                         plot.mapDatasetToRangeAxis(0,0);
-                        plot.mapDatasetToRangeAxis(0,0); 
+                        plot.mapDatasetToRangeAxis(2,2); 
                         chart.setBorderVisible(false);  
                         chart.setTitle("Duration KNN");
 //                        chart.setBackgroundPaint(new Color(10,255,255,0));  
@@ -650,13 +664,13 @@ public class MyJXTable  {
                                 XYSeries series3 = new XYSeries("selected");
                                 XYSeriesCollection dataset2 = new XYSeriesCollection();
                                 series3.add(0,currentknn);
-                                series3.add(40000,currentknn);
+                                series3.add(500,currentknn);
                                 dataset2.addSeries(series3);    
                                 XYPlot plot = (XYPlot) chart.getPlot();
                                 XYItemRenderer renderer2 = new XYLineAndShapeRenderer(true, false); 
                                 renderer2.setSeriesPaint(0, Color.BLACK);
-                                plot.setDataset(2, dataset2);
-                                plot.setRenderer(2, renderer2);
+                                plot.setDataset(3, dataset2);
+                                plot.setRenderer(3, renderer2);
                             }
                         };
                         jxTable.addMouseListener(a2);
@@ -883,7 +897,7 @@ public class MyJXTable  {
         return parameter;
     }
     
-    private static final int BINS = 256;
+    private static final int BINS = 20;
     private final BufferedImage image = getImage();
 
     private BufferedImage getImage() {
@@ -911,10 +925,10 @@ public class MyJXTable  {
         }
         else { 
             double[] std = loadSTD();
-            double[] cur = new double[1000];
-            for(int i = 0; i < 1000; i++) cur[i] = currentevent.getStd();
-            dataset.addSeries("current", cur, BINS/2);
-            dataset.addSeries("distribution", std, BINS/2);   
+            double[] cur = new double[100];
+            for(int i = 0; i < cur.length; i++) cur[i] = currentevent.getStd();
+            dataset.addSeries("current", cur, BINS);
+            dataset.addSeries("distribution", std, BINS);   
             }
         // chart
         chart = ChartFactory.createHistogram("standard deviation", "Value",
@@ -949,8 +963,7 @@ public class MyJXTable  {
     }
     
     private double[] loadSTD(){
-        List<Double> tmp = new ArrayList();
-        tmp = deeventLog.allactstd;
+        List<Double> tmp = deeventLog.actstd.get(currentevent.activity());
         double[] std = new double[tmp.size()];
         for(int i = 0; i <  std.length; i++){
             std[i] = tmp.get(i);
@@ -960,8 +973,7 @@ public class MyJXTable  {
     }
     
     private double[] loadDur(){
-        List<DEEvent> tmp = new ArrayList();
-        tmp = deeventLog.events();
+        List<DEEvent> tmp = deeventLog.acts().get(currentevent.activity()).events();
         List<Double> dur = new ArrayList();
 //        tmp = deeventLog.actstd.get(currentevent.activity());
 //        System.out.println(currentevent.getStd());
@@ -971,6 +983,7 @@ public class MyJXTable  {
         double[] res = new double[dur.size()];
         for(int i = 0; i < dur.size(); i++){
             res[i] = dur.get(i);
+            System.out.println("dur: "+res[i]);
         }
         return res;
     }
@@ -978,8 +991,7 @@ public class MyJXTable  {
     private XYDataset loadDurKnn(){
         XYSeries series1 = new XYSeries("durknn");
         XYSeriesCollection dataset1 = new XYSeriesCollection();
-        List<DEEvent> tmp = new ArrayList();
-        tmp = deeventLog.events();
+        List<DEEvent> tmp = deeventLog.actknn.get(currentevent.activity());
         for(DEEvent e : tmp){
             if((!e.isInvalid())&& (!e.isInsufficient())) {
                 double dur = e.duration();
@@ -1159,10 +1171,10 @@ public class MyJXTable  {
         int response = fileChooser.showOpenDialog(config);
         if (response == JFileChooser.APPROVE_OPTION) {
             // Read csv file here
-            String address = fileChooser.getSelectedFile().getAbsolutePath();
+            String addresstmp = fileChooser.getSelectedFile().getAbsolutePath();
 //            System.out.println(address);
             frame.dispatchEvent(new WindowEvent(frame, WindowEvent.WINDOW_CLOSING));
-            import_display(address);
+            import_display(addresstmp);
         }
     }
     

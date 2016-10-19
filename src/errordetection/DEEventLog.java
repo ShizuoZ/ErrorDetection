@@ -131,7 +131,7 @@ class DurationComparator implements Comparator<DEEvent> {
 }
 
 public class DEEventLog {
-    public static int insuffThresh        = 30;
+    public static int insuffThresh        = 20;
     public static double[] actdurSTDbnd   = {-2.5, 2.5};
     public static double actdurKNNmax     = 2.5;
     public static double[] actdurCLUSTbnd = {-2.5, 2.5};
@@ -151,12 +151,12 @@ public class DEEventLog {
     private DECaseList cases;
     private DEActivityList acts;
     private static int eventNum = 0;
-    private double std = 0.0;
+//    private double std = 0.0;
     public double knnstd;
     
     public HashMap<String,List<Double>> actstd = new HashMap();
     public List<Double> allactstd = new ArrayList<Double>();
-    public HashMap<String,List<Double>> actknn = new HashMap();
+    public HashMap<String,List<DEEvent>> actknn = new HashMap();
     public List<Double> allactknn = new ArrayList<Double>();
     private List<DEEvent> insuffErrors = new LinkedList<DEEvent>();
     private List<DEEvent> durstdErrors = new LinkedList<DEEvent>();
@@ -446,10 +446,12 @@ public class DEEventLog {
                         allactstd.add(z);
                         e.setStd(z);
                     }
-                    if(z <= actdurSTDbnd[0] || actdurSTDbnd[1] <= z){
+//                    if(z <= actdurSTDbnd[0] || actdurSTDbnd[1] <= z){
+                    if( z >= actdurSTDbnd[1] || z <= actdurSTDbnd[0]){
                         durstdErrors.add(e);
                     }
-                    else if (z <= actdurSTDbnd[0]/2 || actdurSTDbnd[1]/2 <= z){
+//                    else if (z <= actdurSTDbnd[0]/2 || actdurSTDbnd[1]/2 <= z){
+                    else if (z >= actdurSTDbnd[1] * 2 / 3 || z <= actdurSTDbnd[0] * 2 / 3){
                         durstdWarnings.add(e);
                     }
                 }
@@ -509,15 +511,16 @@ public class DEEventLog {
                         if(z!= Double.POSITIVE_INFINITY) {
                             String actname = act.activity();
                             if(!actknn.containsKey(actname)){
-                                List<Double> a = new ArrayList();
-                                a.add(z);
+                                List<DEEvent> a = new ArrayList();
+                                a.add(e);
                                 actknn.put(actname,a);
                             }
     //                        System.out.println(z);
-                            actknn.get(actname).add(z);
+                            actknn.get(actname).add(e);
                             allactknn.add(z);
                             e.setKnn(z);
                         }
+//                        if(z >= actdurKNNmax) {
                         if(z >= actdurKNNmax) {
                             durknnErrors.add(e);
                         }

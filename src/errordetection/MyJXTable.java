@@ -8,6 +8,7 @@ import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
+import java.awt.Image;
 import java.awt.Paint;
 import java.awt.Point;
 import java.awt.Rectangle;
@@ -29,6 +30,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -43,6 +45,7 @@ import javax.imageio.ImageIO;
 import javax.swing.AbstractAction;
 import javax.swing.BorderFactory;
 import javax.swing.GroupLayout;
+import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
@@ -116,7 +119,7 @@ public class MyJXTable  {
     private static String address;
     private static SampleTableModel model;
     private static ListIndexBar bar;
-    private static JXFrame frame = new JXFrame("Error Detection", true);
+    private static JXFrame frame;
     private static DEEventLog deeventLog;  
     private static double currentstd = 0;
     private static double currentknn = 0;
@@ -389,7 +392,6 @@ public class MyJXTable  {
                         }
                         bar.addMedMarkers(warnings); 
                         bar.addMarkers(ERROR_INDEX_LIST);
-//                        frame.add(bar);
                         break;
                     case "invalid & insuff errors":
                         final HighlightPredicate myPredicateInv = new HighlightPredicate() {
@@ -412,11 +414,7 @@ public class MyJXTable  {
                         bar.clearMarkers();
                         bar.clearMedMarkers();
                         bar.setForeground(ERROR_COLOUR);
-//                        bar.addMedMarkers(INSUFF_ERROR_LIST_LIGHT); 
                         bar.addMarkers(INSUFF_ERROR_LIST);
-                       
-//                        frame.add(bar);
-//                        frame.add(bar);
                         break;
                     case "Duration STD":
                         final HighlightPredicate myPredicateDur = new HighlightPredicate() {
@@ -454,11 +452,8 @@ public class MyJXTable  {
                         bar.clearMarkers();
                         bar.clearMedMarkers();
                         bar.setForeground(ERROR_COLOUR);
-//                        bar.addLightMarkers(ERROR_INDEX_LIST);
-                        
                         bar.addMedMarkers(DUR_STD_WARNINGS_LIST); 
                         bar.addMarkers(DUR_STD_ERRORS_LIST);
-//                        frame.add(bar);
                         break;
                         
                     case "Duration KNN":
@@ -496,12 +491,9 @@ public class MyJXTable  {
                         
                         bar.clearMarkers();
                         bar.clearMedMarkers();
-                        bar.setForeground(ERROR_COLOUR);
-//                        bar.addLightMarkers(ERROR_INDEX_LIST);
-                        
+                        bar.setForeground(ERROR_COLOUR);                     
                         bar.addMedMarkers(DUR_KNN_WARNINGS_LIST); 
                         bar.addMarkers(DUR_KNN_ERRORS_LIST);
-//                        frame.add(bar);
                         break;
 //                    case "Case errors":
 //                        final HighlightPredicate myPredicateCase = new HighlightPredicate() {
@@ -632,18 +624,6 @@ public class MyJXTable  {
                         plot.setRenderer(0,render0);
                         plot.setRenderer(1,renderer1); 
                         plot.setRenderer(2,renderer2);
-//                        Paint[] paintArray = {
-//                            new Color(0x80ff000f, true),
-//                            new Color(0x80000ff0, true),
-//                            new Color(0x800000ff, true)
-//                        };
-//                        plot.setDrawingSupplier(new DefaultDrawingSupplier(
-//                            paintArray,
-//                            DefaultDrawingSupplier.DEFAULT_FILL_PAINT_SEQUENCE,
-//                            DefaultDrawingSupplier.DEFAULT_OUTLINE_PAINT_SEQUENCE,
-//                            DefaultDrawingSupplier.DEFAULT_STROKE_SEQUENCE,
-//                            DefaultDrawingSupplier.DEFAULT_OUTLINE_STROKE_SEQUENCE,
-//                            DefaultDrawingSupplier.DEFAULT_SHAPE_SEQUENCE));
                         plot.mapDatasetToRangeAxis(0,0);
                         plot.mapDatasetToRangeAxis(2,2); 
                         chart.setBorderVisible(false);  
@@ -1069,11 +1049,10 @@ public class MyJXTable  {
      * this method should be invoked from the
      * event-dispatching thread.
      */
-    private static void createAndShowGUI() {     
+    private static void createAndShowGUI(){     
         initApplicationDefaults();
         //Make sure we have nice window decorations.
         JFrame.setDefaultLookAndFeelDecorated(true);
-        
         //Create and set up the window.
 //        final JXFrame frame = new JXFrame("EventLog", true);
         //Create and set up the content pane.
@@ -1089,9 +1068,6 @@ public class MyJXTable  {
 //        final ListIndexBar bar = new ListIndexBar(BAR_NUMS);
 //        bar.setBackground(new Color(0, 255, 0, 0));        
         bar.setForeground(MARKER_COLOUR);
-//        bar.setOpaque(true);
-        // add a set of example markers
-//        bar.addMarkers(ERROR_INDEX_LIST);
 
         // add a selection listener to select the corresponding item in the list when the marker is selected
         bar.addSelectionListener(new ListSelectionListener() {
@@ -1148,11 +1124,19 @@ public class MyJXTable  {
 //        });
 //    }
     
-    public static void main(String args[]) {
+    public static void main(String args[]) throws Exception {
         //Schedule a job for the event-dispatching thread:
         //creating and showing this application's GUI.
+        URL url16 = new URL("http://i.stack.imgur.com/m0KKu.png");
+        URL url32 = new URL("http://i.stack.imgur.com/LVVMb.png");
+        final List<Image> icons = new ArrayList<Image>();
+        icons.add(ImageIO.read(url16));
+        icons.add(ImageIO.read(url32));
+        System.out.println("yyy");  
         javax.swing.SwingUtilities.invokeLater(new Runnable() {
             public void run() {
+                frame = new JXFrame("Human Coding Checker");
+                frame.setIconImages(icons);
                 createAndShowGUI();  
             }
         });

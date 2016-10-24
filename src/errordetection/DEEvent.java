@@ -20,6 +20,7 @@ public class DEEvent {
     private Double[] errors;
     private double durstd;
     private double durknn;
+    private double caseRangeSTD;
 
     public DEEvent(Integer caseID, String activity,
             Long start, Long end, int index) {
@@ -170,5 +171,13 @@ public class DEEvent {
     
     public double getKnn(){
         return durknn;
+    }    
+    
+    public void setCaseRangeSTD(double caseRangeSTD){
+        this.caseRangeSTD = caseRangeSTD;
     }
+    
+    public double getCaseRangeSTD(){
+        return caseRangeSTD;
+    }   
 }

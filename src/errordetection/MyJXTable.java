@@ -109,8 +109,9 @@ public class MyJXTable  {
     private static List<Integer> DUR_STD_WARNINGS_LIST = new LinkedList(Arrays.asList(INDEX_ARRAY));
     private static List<Integer> DUR_KNN_ERRORS_LIST = new LinkedList(Arrays.asList(INDEX_ARRAY));
     private static List<Integer> DUR_KNN_WARNINGS_LIST = new LinkedList(Arrays.asList(INDEX_ARRAY));
-    private static List<Integer> CASE_ERROR_LIST = new LinkedList(Arrays.asList(INDEX_ARRAY));
-    private static List<Integer> INSUFF_ERROR_LIST = new LinkedList(Arrays.asList(INDEX_ARRAY));
+    private static List<Integer> CASE_RANGE_ERRORS_LIST = new LinkedList(Arrays.asList(INDEX_ARRAY));
+    private static List<Integer> CASE_RANGE_WARNINGS_LIST = new LinkedList(Arrays.asList(INDEX_ARRAY));
+    private static List<Integer> INSUFF_ERRORS_LIST = new LinkedList(Arrays.asList(INDEX_ARRAY));
     private static JXTable jxTable = new JXTable();
     private JFileChooser fileChooser;
     private JPanel config;
@@ -334,7 +335,7 @@ public class MyJXTable  {
             }
         });
         
-        String[] filterlist = {"Default","All Errors","invalid & insuff errors","Duration STD","Duration KNN","Case KNN"};
+        String[] filterlist = {"Default","All Types","invalid & insuff errors","Duration STD","Duration KNN","Case Range"};
         final JComboBox filterbox = new JComboBox(filterlist);
         filterbox.setSelectedIndex(0);
         filterbox.addActionListener(new ActionListener(){
@@ -349,7 +350,7 @@ public class MyJXTable  {
                                 Color.BLACK,
                                 Color.WHITE));
                         break;
-                    case "All Errors":
+                    case "All Types":
                         final HighlightPredicate myPredicate = new HighlightPredicate() {
                             @Override 
                             public boolean isHighlighted(
@@ -400,7 +401,7 @@ public class MyJXTable  {
                                   Component renderer, 
                                   ComponentAdapter adapter) {
 
-                                  return INSUFF_ERROR_LIST.contains(adapter.row);
+                                  return INSUFF_ERRORS_LIST.contains(adapter.row);
                             }
                         };
                         ColorHighlighter highlighterInsuff = new ColorHighlighter(
@@ -414,7 +415,7 @@ public class MyJXTable  {
                         bar.clearMarkers();
                         bar.clearMedMarkers();
                         bar.setForeground(ERROR_COLOUR);
-                        bar.addMarkers(INSUFF_ERROR_LIST);
+                        bar.addMarkers(INSUFF_ERRORS_LIST);
                         break;
                     case "Duration STD":
                         final HighlightPredicate myPredicateDur = new HighlightPredicate() {
@@ -495,50 +496,49 @@ public class MyJXTable  {
                         bar.addMedMarkers(DUR_KNN_WARNINGS_LIST); 
                         bar.addMarkers(DUR_KNN_ERRORS_LIST);
                         break;
-//                    case "Case errors":
-//                        final HighlightPredicate myPredicateCase = new HighlightPredicate() {
-//                            @Override 
-//                            public boolean isHighlighted(
-//                                  Component renderer, 
-//                                  ComponentAdapter adapter) {
-//
-//                                  return CASE_ERROR_LIST.contains(adapter.row);
-//                            }
-//                        };
-//                        ColorHighlighter highlighterCase = new ColorHighlighter(
-//                              myPredicateCase,
-//                              ERROR_COLOUR,   // background color
-//                              null);       // no change in foreground color
-//                        final HighlightPredicate myPredicateCaseLight = new HighlightPredicate() {
-//                            @Override 
-//                            public boolean isHighlighted(
-//                                  Component renderer, 
-//                                  ComponentAdapter adapter) {
-//
-//                                  return CASE_ERROR_LIST_LIGHT.contains(adapter.row);
-//                            }
-//                        };
-//                        ColorHighlighter highlighterCaseLight = new ColorHighlighter(
-//                              myPredicateCaseLight,
-//                              WARNING_COLOUR,   // background color
-//                              null);       // no change in foreground color
-//                        jxTable.setHighlighters(new ColorHighlighter(HighlightPredicate.ROLLOVER_ROW, 
-//                                Color.BLACK,
-//                                Color.WHITE));
-//                        jxTable.addHighlighter(highlighterCaseLight);
-//                        jxTable.addHighlighter(highlighterCase);
-//                        bar.clearMarkers();
-//                        bar.clearMedMarkers();
-//                        bar.setForeground(ERROR_COLOUR);
-//                        bar.addMedMarkers(CASE_ERROR_LIST_LIGHT);
-//                        bar.addMarkers(CASE_ERROR_LIST);
-////                        frame.add(bar);
-//                        break;
+                    case "Case Range":
+                        final HighlightPredicate myPredicateCase = new HighlightPredicate() {
+                            @Override 
+                            public boolean isHighlighted(
+                                  Component renderer, 
+                                  ComponentAdapter adapter) {
+
+                                  return CASE_RANGE_ERRORS_LIST.contains(adapter.row);
+                            }
+                        };
+                        ColorHighlighter highlighterCase = new ColorHighlighter(
+                              myPredicateCase,
+                              ERROR_COLOUR,   // background color
+                              null);       // no change in foreground color
+                        final HighlightPredicate myPredicateCaseLight = new HighlightPredicate() {
+                            @Override 
+                            public boolean isHighlighted(
+                                  Component renderer, 
+                                  ComponentAdapter adapter) {
+
+                                  return CASE_RANGE_WARNINGS_LIST.contains(adapter.row);
+                            }
+                        };
+                        ColorHighlighter highlighterCaseLight = new ColorHighlighter(
+                              myPredicateCaseLight,
+                              WARNING_COLOUR,   // background color
+                              null);       // no change in foreground color
+                        jxTable.setHighlighters(new ColorHighlighter(HighlightPredicate.ROLLOVER_ROW, 
+                                Color.BLACK,
+                                Color.WHITE));
+                        jxTable.addHighlighter(highlighterCaseLight);
+                        jxTable.addHighlighter(highlighterCase);
+                        bar.clearMarkers();
+                        bar.clearMedMarkers();
+                        bar.setForeground(ERROR_COLOUR);
+                        bar.addMedMarkers(CASE_RANGE_WARNINGS_LIST);
+                        bar.addMarkers(CASE_RANGE_ERRORS_LIST);
+                        break;
                 }
             }
         });
         
-        String[] chartlist = {"invalid", "durstd", "durknn", "caseknn"};
+        String[] chartlist = {"Dur STD", "Dur KNN", "Case Range"};
         final JComboBox chartbox = new JComboBox(chartlist);
         chartbox.setSelectedIndex(0);
         chartbox.addActionListener(new ActionListener(){
@@ -546,7 +546,7 @@ public class MyJXTable  {
             public void actionPerformed(ActionEvent e){
                 String item = (String)chartbox.getSelectedItem();
                 switch(item){
-                    case "durstd":
+                    case "Dur STD":
                         a1 = new java.awt.event.MouseAdapter() {
                             @Override
                             public void mouseClicked(java.awt.event.MouseEvent evt) {
@@ -565,7 +565,7 @@ public class MyJXTable  {
                         };
                         jxTable.addMouseListener(a1);
                         break;
-                    case "durknn":     
+                    case "Dur KNN":     
 ////                        System.out.println("Knn size: " + dur.length);
                              
 //                        XYDataset dataset1 = loadDurKnn();
@@ -659,6 +659,20 @@ public class MyJXTable  {
                         content.revalidate();
                         content.repaint();
                         System.out.println("Finish");
+                        break;
+                        
+                    case "Case Range":
+                        double[] caseRangeSTDData = loadSTD();
+                        double[] cur = new double[100];
+                        dataset = new HistogramDataset();
+                        dataset.addSeries("range std", caseRangeSTDData, BINS);
+                        for(int i = 0; i < cur.length; i++) cur[i] = currentevent.getCaseRangeSTD();
+                        chart = ChartFactory.createHistogram("standard deviation", "Value",
+                            "Count", dataset, PlotOrientation.VERTICAL, true, true, false);
+                        charts = new ChartPanel(chart);
+                        content.add(charts, BorderLayout.CENTER);
+                        content.revalidate();
+                        content.repaint();
                         break;
                 }
             }
@@ -984,6 +998,15 @@ public class MyJXTable  {
         return dataset1;
     }
     
+    private double[] loadCaseRange(){
+        double[] std = new double[deeventLog.caserangestd.size()];
+        int i = 0;
+        for(Double rangestd : deeventLog.caserangestd.values()){
+            std[i++] = (double) rangestd;
+        }
+        return std;
+    }
+    
     private void saveJTableAsCSVActionPerformed(ActionEvent evt) throws IOException{
         int response = fileChooser.showOpenDialog(config);
         if (response == JFileChooser.APPROVE_OPTION) {
@@ -1104,14 +1127,17 @@ public class MyJXTable  {
     
     public static void setMarkerList(List<Integer> err, List<Integer> insuffErr,
             List<Integer> durstdErr, List<Integer> durstdWarn, 
-            List<Integer> durknnErr, List<Integer> durknnWarn
+            List<Integer> durknnErr, List<Integer> durknnWarn,
+            List<Integer> caseRangeErr, List<Integer> caseRangeWarn
             ){
         MyJXTable.ERROR_INDEX_LIST = err;
-        MyJXTable.INSUFF_ERROR_LIST = insuffErr;
+        MyJXTable.INSUFF_ERRORS_LIST = insuffErr;
         MyJXTable.DUR_STD_ERRORS_LIST = durstdErr;
         MyJXTable.DUR_STD_WARNINGS_LIST = durstdWarn;
         MyJXTable.DUR_KNN_ERRORS_LIST = durknnErr;
         MyJXTable.DUR_KNN_WARNINGS_LIST = durknnWarn;
+        MyJXTable.CASE_RANGE_ERRORS_LIST = caseRangeErr;
+        MyJXTable.CASE_RANGE_WARNINGS_LIST = caseRangeWarn;
     }
     
 //    public static void startTable() {
@@ -1173,12 +1199,17 @@ public class MyJXTable  {
             List<DEEvent> durstdWarnings = deeventLog.durstdWarnings();
             List<DEEvent> durknnErrors = deeventLog.durknnErrors();
             List<DEEvent> durknnWarnings = deeventLog.durknnWarnings();
+            List<DEEvent> caseRangeErrors = deeventLog.caseRangeErrors();
+            List<DEEvent> caseRangeWarnings = deeventLog.caseRangeWarnings();
             List<Integer> errMarkers = new ArrayList<Integer>();
             List<Integer> insuffErrMarkers = new ArrayList<Integer>();
             List<Integer> durstdErrMarkers = new ArrayList<Integer>();
             List<Integer> durstdWarnMarkers = new ArrayList<Integer>();
             List<Integer> durknnErrMarkers = new ArrayList<Integer>();
-            List<Integer> durknnWarnMarkers = new ArrayList<Integer>();    
+            List<Integer> durknnWarnMarkers = new ArrayList<Integer>(); 
+            List<Integer> caseRangeErrMarkers = new ArrayList<Integer>();
+            List<Integer> caseRangeWarnMarkers = new ArrayList<Integer>(); 
+            
 
             for(DEEvent e : errors){
                 errMarkers.add(e.index());
@@ -1198,12 +1229,19 @@ public class MyJXTable  {
             for(DEEvent e : durknnWarnings){
                 durknnWarnMarkers.add(e.index());
             };
+            for(DEEvent e : caseRangeErrors){
+                caseRangeErrMarkers.add(e.index());
+            };
+            for(DEEvent e : caseRangeWarnings){
+                caseRangeWarnMarkers.add(e.index());
+            };
             currentevent = deeventLog.events().get(0);
             currentstd = currentevent.getStd();
             MyJXTable myJXTable = new MyJXTable(deeventLog.getEventNum(),address);//,deeventLog.events());
             myJXTable.setMarkerList(errMarkers, insuffErrMarkers, 
                     durstdErrMarkers, durstdWarnMarkers, 
-                    durknnErrMarkers, durknnWarnMarkers
+                    durknnErrMarkers, durknnWarnMarkers,
+                    caseRangeErrMarkers, caseRangeWarnMarkers
                     );
             myJXTable.createAndShowGUI();
         } catch (BiffException ex) {

@@ -132,14 +132,14 @@ class DurationComparator implements Comparator<DEEvent> {
 
 public class DEEventLog {
     public static int insuffThresh        = 20;
-    public static double[] actdurSTDbnd   = {-2.5, 2.5};
-    public static double actdurKNNmax     = 2.5;
-    public static double[] actdurCLUSTbnd = {-2.5, 2.5};
+    public static double[] actdurSTDbnd   = {-3, 3};
+    public static double actdurKNNmax     = 3;
+    public static double[] actdurCLUSTbnd = {-3, 3};
     public static int actdurCLUSTtest     = 5;
-    public static double[] acttimeSTDbnd  = {-2, 2};
-    public static double acttimeKNNmax    = 2;
-    public static double[] caseSTDbnd     = {-1.5, 1.5};
-    public static double[] caseRANGEbnd    = {-1.5, 1.5};
+    public static double[] acttimeSTDbnd  = {-3, 3};
+    public static double acttimeKNNmax    = 3;
+    public static double[] caseSTDbnd     = {-3, 3};
+    public static double[] caseRANGEbnd    = {-3, 3};
 
     public static long milliday;
     public static SimpleDateFormat f;
@@ -158,13 +158,14 @@ public class DEEventLog {
     public List<Double> allactstd = new ArrayList<Double>();
     public HashMap<String,List<DEEvent>> actknn = new HashMap();
     public List<Double> allactknn = new ArrayList<Double>();
+    public HashMap<Integer, Double> caserangestd = new HashMap();
     private List<DEEvent> insuffErrors = new LinkedList<DEEvent>();
     private List<DEEvent> durstdErrors = new LinkedList<DEEvent>();
     private List<DEEvent> durstdWarnings = new LinkedList<DEEvent>();
     private List<DEEvent> durknnErrors = new LinkedList<DEEvent>();
     private List<DEEvent> durknnWarnings = new LinkedList<DEEvent>();
-    private List<DEEvent> caseknnErrors = new LinkedList<DEEvent>();
-    private List<DEEvent> caseknnWarnings = new LinkedList<DEEvent>();
+    private List<DEEvent> caseRangeErrors = new LinkedList<DEEvent>();
+    private List<DEEvent> caseRangeWarnings = new LinkedList<DEEvent>();
     public DEEventLog(String filename) throws BiffException, IOException {
         if (DEEventLog.f == null) {init();}
 //        Workbook workbook = Workbook.getWorkbook(new File(filename));
@@ -402,9 +403,19 @@ public class DEEventLog {
     public List<DEEvent> durknnErrors(){
         return durknnErrors;
     }
+    
     public List<DEEvent> durknnWarnings(){
         return durknnWarnings;
     }
+    
+    public List<DEEvent> caseRangeErrors(){
+        return caseRangeErrors;
+    }
+    
+    public List<DEEvent> caseRangeWarnings(){
+        return caseRangeWarnings;
+    }
+    
     private List<DEEvent> insuff() {
         List<DEEvent> errors = new LinkedList<DEEvent>();
 
@@ -688,7 +699,8 @@ public class DEEventLog {
             stds[i] = cas.sigmaMidTime();
             avgstd += stds[i];
             i++;
-        } avgstd /= i;
+        } 
+        avgstd /= i;
 
         long stdstd = 0;
         for (int j = 0; j < i; j++) {
@@ -703,18 +715,20 @@ public class DEEventLog {
                 toMark[j] = z;
             }
         }
-
+        
         i = 0;
         for (DECase cas : cases) {
             if (toMark[i] != null) {
+                
                 for (DEEvent e : cas) {
                 if (!e.isInvalid()) {
                     e.mark(ErrorType.CASE_STD, toMark[i]);
                     errors.add(e);
                 }}
+                
             }
             i++;
-        }
+        }              
 
         errors.sort(new Comparator<DEEvent>() {
             @Override
@@ -749,6 +763,7 @@ public class DEEventLog {
         double z = 0;
         for (DECase cas: cases) {
             z = ((double) ranges.get(cas)-avg)/std;
+            caserangestd.put(cas.caseID(),z);
             if (z <= caseRANGEbnd[0] || caseRANGEbnd[1] <= z) {
                 for (DEEvent e: cas) {
                 if (!e.isInvalid()) {
@@ -759,8 +774,24 @@ public class DEEventLog {
                 //System.out.println(cas.events().get(0).caseID() + ": " + z + ": "
                 //        + DEEventLog.g.format(new Date(ranges.get(cas))));
             }
+            if (z <= caseRANGEbnd[0] || caseRANGEbnd[1] <= z) {
+                for(DEEvent e: cas){
+                    if (!e.isInvalid()) {
+                    caseRangeErrors.add(e);
+                    }
+                }
+            }else if (z <= caseRANGEbnd[0] * 2 / 3 || caseRANGEbnd[1] * 2 / 3 <= z) {
+                for(DEEvent e: cas){
+                    if (!e.isInvalid()) {
+                    caseRangeWarnings.add(e);
+                    }
+                }
+            }
+            for (DEEvent e: cas) {
+                if (!e.isInvalid()) {
+                    e.setCaseRangeSTD(z);
+                }}
         }
-    
         return errors;
     }
     

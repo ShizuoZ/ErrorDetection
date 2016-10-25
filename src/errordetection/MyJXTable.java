@@ -35,6 +35,7 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.logging.Level;
@@ -335,7 +336,7 @@ public class MyJXTable  {
             }
         });
         
-        String[] filterlist = {"Default","All Types","invalid & insuff errors","Duration STD","Duration KNN","Case Range"};
+        String[] filterlist = {"Default","All Types","invalid & insuff errors","Duration STD","Duration KNN"/*,"Case Range"*/};
         final JComboBox filterbox = new JComboBox(filterlist);
         filterbox.setSelectedIndex(0);
         filterbox.addActionListener(new ActionListener(){
@@ -538,7 +539,7 @@ public class MyJXTable  {
             }
         });
         
-        String[] chartlist = {"Dur STD", "Dur KNN", "Case Range"};
+        String[] chartlist = {"Dur STD", "Dur KNN"/*, "Case Range"*/};
         final JComboBox chartbox = new JComboBox(chartlist);
         chartbox.setSelectedIndex(0);
         chartbox.addActionListener(new ActionListener(){
@@ -547,84 +548,119 @@ public class MyJXTable  {
                 String item = (String)chartbox.getSelectedItem();
                 switch(item){
                     case "Dur STD":
+                        double[] dur_std = loadDur();
+                        int maxstd = (int) ((int) 2 * maxFreq(dur_std));
+                        double[] cur_std = new double[maxstd];
+                        dataset = new HistogramDataset();
+                        for(int i = 0; i < cur_std.length; i++) cur_std[i] = currentevent.getStd();
+                        dataset.addSeries("current", cur_std, BINS);                        
+                        dataset.addSeries("dur", dur_std, BINS);
+                        chart = ChartFactory.createHistogram("standard deviation", "Value",
+                            "Count", dataset, PlotOrientation.VERTICAL, true, true, false);
+                        XYPlot plot_std = (XYPlot) chart.getPlot();
+                        XYBarRenderer renderer = (XYBarRenderer) plot_std.getRenderer();
+                        renderer.setBarPainter(new StandardXYBarPainter());
+                        // translucent red, green & blue
+                        Paint[] paintArray = {
+                            new Color(0x80ff000f, true),
+                            new Color(0x80000ff0, true),
+                            new Color(0x800000ff, true)
+                        };
+                        plot_std.setDrawingSupplier(new DefaultDrawingSupplier(
+                            paintArray,
+                            DefaultDrawingSupplier.DEFAULT_FILL_PAINT_SEQUENCE,
+                            DefaultDrawingSupplier.DEFAULT_OUTLINE_PAINT_SEQUENCE,
+                            DefaultDrawingSupplier.DEFAULT_STROKE_SEQUENCE,
+                            DefaultDrawingSupplier.DEFAULT_OUTLINE_STROKE_SEQUENCE,
+                            DefaultDrawingSupplier.DEFAULT_SHAPE_SEQUENCE));
+                        ValueAxis range = plot_std.getRangeAxis();
+                        range.setVisible(false);
+                        chart.setBorderVisible(false);  
+                        charts = new ChartPanel(chart);
+                        charts.setMouseWheelEnabled(true);
+                        charts.setPreferredSize(new Dimension(400,400));
+                        charts.setBackground(Color.WHITE);
+                        charts.setBorder(BorderFactory.createTitledBorder("Chart Panel"));
+                        content.remove(charts);                 
                         a1 = new java.awt.event.MouseAdapter() {
                             @Override
                             public void mouseClicked(java.awt.event.MouseEvent evt) {
                                 int row = jxTable.rowAtPoint(evt.getPoint());
                                 currentevent = deeventLog.events().get(row);
+                                System.out.println(currentevent.activity());
                                 currentstd = deeventLog.events().get(row).getStd();
                                 System.out.println("row:" + row + "std:" + currentstd);
-                                double[] std = loadSTD();
-                                double[] cur = new double[100];
-                                for(int i = 0; i < cur.length; i++) cur[i] = currentstd;
+                                double[] dur_std = loadSTD();
+                                int maxstd = (int) ((int) 2 * maxFreq(dur_std));
+                                double[] cur_std = new double[maxstd];
                                 dataset = new HistogramDataset();
-                                dataset.addSeries("current", cur, BINS);
-                                dataset.addSeries("distribution", std, BINS);
+                                for(int i = 0; i < cur_std.length; i++) cur_std[i] = currentevent.getStd();
+                                dataset = new HistogramDataset();
+                                dataset.addSeries("current", cur_std, BINS);
+                                dataset.addSeries("distribution", dur_std, BINS);
                                 ((XYPlot) chart.getPlot()).setDataset(dataset);
                             }
                         };
-                        jxTable.addMouseListener(a1);
-                        break;
-                    case "Dur KNN":     
-////                        System.out.println("Knn size: " + dur.length); 
-//                        XYDataset dataset1 = loadDurKnn();
-////                        dataset1.addSeries("knn", knn, BINS/2); 
-//                        XYPlot plot = (XYPlot) charts.getChart().getPlot();
-//                        XYLineAndShapeRenderer renderer = new XYLineAndShapeRenderer();
+                        jxTable.removeMouseListener(a2);
+                        jxTable.addMouseListener(a1);                
+                        jxTable.revalidate();
+                        content.add(charts, BorderLayout.CENTER);
+                        content.revalidate();
+                        content.repaint();
                         
+                        break;
+                    case "Dur KNN":                        
                         XYBarRenderer render0 = new XYBarRenderer();
-//                        Shape shape  = new Ellipse2D.Double(0,0,1,1);
-//                        renderer.setBaseShape(shape);
                         render0.setDefaultShadowsVisible(false);
                         render0.setShadowXOffset(0);
                         render0.setShadowYOffset(0);
                         render0.setSeriesPaint(0, new Color(0x800000ff, true));
-//                        plot.setDataset(0, dataset);
-//                        plot.setRenderer(0, render1); 
-//                        plot.setDataset(1, dataset1);
-//                        plot.setRenderer(1, renderer); 
-//                        plot.setDomainPannable(true);
-//                        plot.setRangePannable(true);
-//                        plot.setRangeAxis(0, new NumberAxis("Series 1"));
-//                        plot.setRangeAxis(1, new NumberAxis("Series 2"));
-////                        plot.setDomainAxis(0, new NumberAxis("Series 1"));
-//                        plot.setDomainAxis(1, new NumberAxis("Series 2"));
-//                        //Map the data to the appropriate axis
-//                        plot.mapDatasetToRangeAxis(0, 0);
-//                        plot.mapDatasetToRangeAxis(1, 1); 
-//                        plot.mapDatasetToDomainAxis(0, 0);
-//                        plot.mapDatasetToDomainAxis(1, 1); 
                         double[] dur = loadDur();
                         dataset = new HistogramDataset();
                         dataset.addSeries("dur", dur, BINS);
                         content.remove(charts);
                         XYDataset dataset1 = loadDurKnn();                       
-                        XYSeries series2 = new XYSeries("knn value");
-                        XYSeriesCollection dataset2 = new XYSeriesCollection();
-                        System.out.println(deeventLog.knnstd);
-                        series2.add(0,deeventLog.knnstd);
-                        series2.add(500,deeventLog.knnstd);
-                        dataset2.addSeries(series2);
-                        XYItemRenderer renderer2 = new XYLineAndShapeRenderer(true, false); 
-                        renderer2.setSeriesPaint(0, Color.RED);
-                        chart = ChartFactory.createScatterPlot("Duration KNN", "dur",
-                            "knn", dataset1, PlotOrientation.VERTICAL, true, true, false);     
-                        chart = ChartFactory.createHistogram("standard deviation", "Value",
+//                        XYSeries series2 = new XYSeries("knn std ratio");
+//                        XYSeriesCollection dataset2 = new XYSeriesCollection();
+//                        System.out.println(currentevent.getKnn());
+//                        series2.add(0,currentevent.getKnn());
+//                        series2.add(500,currentevent.getKnn());
+//                        dataset2.addSeries(series2);
+//                        XYItemRenderer renderer2 = new XYLineAndShapeRenderer(true, false); 
+//                        renderer2.setSeriesPaint(0, Color.BLACK);
+//                        chart = ChartFactory.createScatterPlot("Duration KNN", "dur",
+//                            "knn", dataset1, PlotOrientation.VERTICAL, true, true, false);     
+                        chart = ChartFactory.createHistogram("Duration", "dur",
                             "Count", dataset, PlotOrientation.VERTICAL, true, true, false);
 //                        dataset1.addSeries("knn", knn, BINS/2); 
                         XYPlot plot = (XYPlot) chart.getPlot();
-                        XYItemRenderer renderer1 = new XYLineAndShapeRenderer(false, true);
+                        XYItemRenderer renderer1 = new XYLineAndShapeRenderer(true, false);
                         Shape shape  = new Ellipse2D.Double(0,0,0.1,0.1);
                         renderer1.setBaseShape(shape);
-                        renderer1.setSeriesPaint(0, Color.red);
-                        plot.setDataset(0,dataset);
-                        plot.setDataset(1,dataset1);
-                        plot.setDataset(2,dataset2);
-                        plot.setRenderer(0,render0);
-                        plot.setRenderer(1,renderer1); 
-                        plot.setRenderer(2,renderer2);
+                        renderer1.setSeriesPaint(0, Color.RED);
+                        plot.setDataset(1,dataset);
+                        plot.setDataset(0,dataset1);
+//                        plot.setDataset(2,dataset2);
+                        plot.setRenderer(1,render0);
+                        plot.setRenderer(0,renderer1); 
+//                        plot.setRenderer(2,renderer2);
+                        plot.setRangeAxis(1, new NumberAxis("Count"));
+                        plot.setRangeAxis(0, new NumberAxis("Knn plot"));
+                        plot.setDomainAxis(new NumberAxis("Duration"));
                         plot.mapDatasetToRangeAxis(0,0);
-                        plot.mapDatasetToRangeAxis(2,2); 
+                        plot.mapDatasetToRangeAxis(1,1); 
+                        Paint[] paintArray_durknn = {
+                            new Color(0x80ff000f, true),
+                            new Color(0x80000ff0, true),
+                            new Color(0x800000ff, true)
+                        };
+                        plot.setDrawingSupplier(new DefaultDrawingSupplier(
+                            paintArray_durknn,
+                            DefaultDrawingSupplier.DEFAULT_FILL_PAINT_SEQUENCE,
+                            DefaultDrawingSupplier.DEFAULT_OUTLINE_PAINT_SEQUENCE,
+                            DefaultDrawingSupplier.DEFAULT_STROKE_SEQUENCE,
+                            DefaultDrawingSupplier.DEFAULT_OUTLINE_STROKE_SEQUENCE,
+                            DefaultDrawingSupplier.DEFAULT_SHAPE_SEQUENCE));
                         chart.setBorderVisible(false);  
                         chart.setTitle("Duration KNN");
 //                        chart.setBackgroundPaint(new Color(10,255,255,0));  
@@ -647,16 +683,16 @@ public class MyJXTable  {
                                 XYDataset dataset1 = loadDurKnn();
                                 XYSeries series3 = new XYSeries("selected");
                                 XYSeriesCollection dataset3 = new XYSeriesCollection();
-                                series3.add(0,currentknn);
-                                series3.add(500,currentknn);
+                                series3.add(0,currentevent.getKnn());
+                                series3.add(500,currentevent.getKnn());
                                 dataset3.addSeries(series3);    
                                 XYPlot plot = (XYPlot) chart.getPlot();
                                 XYItemRenderer renderer3 = new XYLineAndShapeRenderer(true, false); 
-                                renderer2.setSeriesPaint(0, Color.BLACK);
-                                plot.setDataset(0, dataset);
-                                plot.setDataset(1, dataset1);
-                                plot.setDataset(3, dataset3);
-                                plot.setRenderer(3, renderer3);
+                                renderer3.setSeriesPaint(0, Color.RED);
+                                plot.setDataset(1, dataset);
+                                plot.setDataset(0, dataset1);
+//                                plot.setDataset(3, dataset3);
+//                                plot.setRenderer(3, renderer3);
                             }
                         };
                         jxTable.addMouseListener(a2);
@@ -664,7 +700,6 @@ public class MyJXTable  {
                         content.add(charts, BorderLayout.CENTER);
                         content.revalidate();
                         content.repaint();
-//                        System.out.println("Finish");
                         break;
                         
                     case "Case Range":
@@ -675,7 +710,32 @@ public class MyJXTable  {
                         for(int i = 0; i < cur.length; i++) cur[i] = currentevent.getCaseRangeSTD();
                         chart = ChartFactory.createHistogram("standard deviation", "Value",
                             "Count", dataset, PlotOrientation.VERTICAL, true, true, false);
+                        content.remove(charts);
+                        XYPlot plot_case = (XYPlot) chart.getPlot();
                         charts = new ChartPanel(chart);
+                        XYBarRenderer renderer_case = (XYBarRenderer) plot_case.getRenderer();
+                        renderer_case.setBarPainter(new StandardXYBarPainter());
+                        // translucent red, green & blue
+                        Paint[] paintArray_case = {
+                            new Color(0x80ff000f, true),
+                            new Color(0x80000ff0, true),
+                            new Color(0x800000ff, true)
+                        };
+                        plot_case.setDrawingSupplier(new DefaultDrawingSupplier(
+                            paintArray_case,
+                            DefaultDrawingSupplier.DEFAULT_FILL_PAINT_SEQUENCE,
+                            DefaultDrawingSupplier.DEFAULT_OUTLINE_PAINT_SEQUENCE,
+                            DefaultDrawingSupplier.DEFAULT_STROKE_SEQUENCE,
+                            DefaultDrawingSupplier.DEFAULT_OUTLINE_STROKE_SEQUENCE,
+                            DefaultDrawingSupplier.DEFAULT_SHAPE_SEQUENCE));
+                        ValueAxis range_case = plot_case.getRangeAxis();
+                        range_case.setVisible(false);
+                        chart.setBorderVisible(false);  
+                        charts = new ChartPanel(chart);
+                        charts.setMouseWheelEnabled(true);
+                        charts.setPreferredSize(new Dimension(400,400));
+                        charts.setBackground(Color.WHITE);
+                        charts.setBorder(BorderFactory.createTitledBorder("Chart Panel"));                      
                         content.add(charts, BorderLayout.CENTER);
                         content.revalidate();
                         content.repaint();
@@ -897,7 +957,7 @@ public class MyJXTable  {
         return parameter;
     }
     
-    private static final int BINS = 20;
+    private static final int BINS = 64;
     private final BufferedImage image = getImage();
 
     private BufferedImage getImage() {
@@ -925,7 +985,7 @@ public class MyJXTable  {
         }
         else { 
             double[] std = loadSTD();
-            double[] cur = new double[100];
+            double[] cur = new double[2*maxFreq(std)];
             for(int i = 0; i < cur.length; i++) cur[i] = currentevent.getStd();
             dataset.addSeries("current", cur, BINS);
             dataset.addSeries("distribution", std, BINS);   
@@ -975,23 +1035,34 @@ public class MyJXTable  {
     private double[] loadDur(){
         List<DEEvent> tmp = deeventLog.acts().get(currentevent.activity()).events();
         List<Double> dur = new ArrayList();
-//        tmp = deeventLog.actstd.get(currentevent.activity());
-//        System.out.println(currentevent.getStd());
         for(DEEvent e : tmp){
             if((!e.isInvalid())&& (!e.isInsufficient())) dur.add((double) e.duration());
         }
         double[] res = new double[dur.size()];
         for(int i = 0; i < dur.size(); i++){
             res[i] = dur.get(i);
-//            System.out.println("dur: "+res[i]);
         }
         return res;
+    }
+    
+    private int maxFreq(double[] d){
+        HashMap<Double, Integer> freqCount = new HashMap();
+        int max = Integer.MIN_VALUE;
+        for(int i = 0; i < d.length; i++){
+            if(!freqCount.containsKey(d[i])) freqCount.put(d[i],1);
+            else freqCount.put(d[i], freqCount.get(d[i]) + 1);
+        }
+        for(Integer i : freqCount.values()){
+            max = Math.max(i,max);
+        }
+        return max;
     }
      
     private XYDataset loadDurKnn(){
         XYSeries series1 = new XYSeries("durknn");
         XYSeriesCollection dataset1 = new XYSeriesCollection();
         List<DEEvent> tmp = deeventLog.actknn.get(currentevent.activity());
+//        if(tmp == null) return dataset1;
         for(DEEvent e : tmp){
             if((!e.isInvalid())&& (!e.isInsufficient())) {
                 double dur = e.duration();
@@ -1164,7 +1235,6 @@ public class MyJXTable  {
         final List<Image> icons = new ArrayList<Image>();
         icons.add(ImageIO.read(url16));
         icons.add(ImageIO.read(url32));
-        System.out.println("yyy");  
         javax.swing.SwingUtilities.invokeLater(new Runnable() {
             public void run() {
                 frame = new JXFrame("Human Coding Checker");

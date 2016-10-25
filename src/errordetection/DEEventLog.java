@@ -152,12 +152,10 @@ public class DEEventLog {
     private DEActivityList acts;
     private static int eventNum = 0;
 //    private double std = 0.0;
-    public double knnstd;
-    
+    public HashMap<String,Double> knnstd = new HashMap();
     public HashMap<String,List<Double>> actstd = new HashMap();
     public List<Double> allactstd = new ArrayList<Double>();
     public HashMap<String,List<DEEvent>> actknn = new HashMap();
-    public List<Double> allactknn = new ArrayList<Double>();
     public HashMap<Integer, Double> caserangestd = new HashMap();
     private List<DEEvent> insuffErrors = new LinkedList<DEEvent>();
     private List<DEEvent> durstdErrors = new LinkedList<DEEvent>();
@@ -484,8 +482,9 @@ public class DEEventLog {
         int n;
         for (DEActivity act : acts) {
             if (!act.isInsufficient()) {
-                knn = act.knn((int) Math.sqrt(act.size()));
-
+                int k = (int) Math.sqrt(act.size());
+                knn = act.knn(k);
+                
                 // CALCULATE AVERAGE KNN
                 avg = 0;
                 n = 0;
@@ -505,7 +504,6 @@ public class DEEventLog {
                     }
                 }
                 std = (long) Math.sqrt(std / n);
-                knnstd = std;
                 if (std == 0) {
                     continue;
                 }
@@ -528,8 +526,7 @@ public class DEEventLog {
                             }
     //                        System.out.println(z);
                             actknn.get(actname).add(e);
-                            allactknn.add(z);
-                            e.setKnn(z);
+                            e.setKnn(knn.get(e)/k);
                         }
 //                        if(z >= actdurKNNmax) {
                         if(z >= actdurKNNmax) {

@@ -6,12 +6,14 @@
             <file>file:/Users/edward/NetBeansProjects/ErrorDetection/src/errordetection/DEEvent.java</file>
             <file>file:/Users/edward/NetBeansProjects/ErrorDetection/src/errordetection/DEActivityList.java</file>
             <file>file:/Users/edward/NetBeansProjects/ErrorDetection/src/errordetection/ListIndexBar.java</file>
+            <file>file:/Users/edward/NetBeansProjects/ErrorDetection/build/built-jar.properties</file>
             <file>file:/Users/edward/NetBeansProjects/ErrorDetection/src/errordetection/MyJXTable.java</file>
             <file>file:/Users/edward/NetBeansProjects/ErrorDetection/src/errordetection/DECaseList.java</file>
             <file>jar:file:/Users/edward/NetBeansProjects/ErrorDetection/lib/weka-src.jar!/src/main/java/weka/classifiers/AbstractClassifier.java</file>
             <file>file:/Users/edward/NetBeansProjects/ErrorDetection/src/errordetection/ExportJTable.java</file>
             <file>jar:file:/Users/edward/NetBeansProjects/ErrorDetection/lib/weka-src.jar!/src/main/java/weka/gui/AbstractGUIApplication.java</file>
             <file>file:/Users/edward/NetBeansProjects/ErrorDetection/src/errordetection/DEEventLog.java</file>
+            <file>file:/Users/edward/NetBeansProjects/ErrorDetection/src/errordetection/DEKMeansClusterer.java</file>
         </group>
     </open-files>
 </project-private>

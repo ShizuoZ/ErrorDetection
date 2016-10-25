@@ -566,15 +566,12 @@ public class MyJXTable  {
                         jxTable.addMouseListener(a1);
                         break;
                     case "Dur KNN":     
-////                        System.out.println("Knn size: " + dur.length);
-                             
+////                        System.out.println("Knn size: " + dur.length); 
 //                        XYDataset dataset1 = loadDurKnn();
 ////                        dataset1.addSeries("knn", knn, BINS/2); 
 //                        XYPlot plot = (XYPlot) charts.getChart().getPlot();
 //                        XYLineAndShapeRenderer renderer = new XYLineAndShapeRenderer();
-                        double[] dur = loadDur();
-                        dataset = new HistogramDataset();
-                        dataset.addSeries("dur", dur, BINS);
+                        
                         XYBarRenderer render0 = new XYBarRenderer();
 //                        Shape shape  = new Ellipse2D.Double(0,0,1,1);
 //                        renderer.setBaseShape(shape);
@@ -597,9 +594,11 @@ public class MyJXTable  {
 //                        plot.mapDatasetToRangeAxis(1, 1); 
 //                        plot.mapDatasetToDomainAxis(0, 0);
 //                        plot.mapDatasetToDomainAxis(1, 1); 
+                        double[] dur = loadDur();
+                        dataset = new HistogramDataset();
+                        dataset.addSeries("dur", dur, BINS);
                         content.remove(charts);
-                        double std = deeventLog.knnstd;
-                        XYDataset dataset1 = loadDurKnn();
+                        XYDataset dataset1 = loadDurKnn();                       
                         XYSeries series2 = new XYSeries("knn value");
                         XYSeriesCollection dataset2 = new XYSeriesCollection();
                         System.out.println(deeventLog.knnstd);
@@ -614,7 +613,7 @@ public class MyJXTable  {
                             "Count", dataset, PlotOrientation.VERTICAL, true, true, false);
 //                        dataset1.addSeries("knn", knn, BINS/2); 
                         XYPlot plot = (XYPlot) chart.getPlot();
-                        XYItemRenderer renderer1 = new XYLineAndShapeRenderer(false, true);;
+                        XYItemRenderer renderer1 = new XYLineAndShapeRenderer(false, true);
                         Shape shape  = new Ellipse2D.Double(0,0,0.1,0.1);
                         renderer1.setBaseShape(shape);
                         renderer1.setSeriesPaint(0, Color.red);
@@ -639,18 +638,25 @@ public class MyJXTable  {
                             @Override
                             public void mouseClicked(java.awt.event.MouseEvent evt) {
                                 int row = jxTable.rowAtPoint(evt.getPoint());
+                                currentevent = deeventLog.events().get(row);
                                 currentknn = deeventLog.events().get(row).getKnn();
                                 System.out.println("row:" + row + "knn:" + currentknn);
+                                double[] dur = loadDur();
+                                dataset = new HistogramDataset();
+                                dataset.addSeries("dur", dur, BINS);
+                                XYDataset dataset1 = loadDurKnn();
                                 XYSeries series3 = new XYSeries("selected");
-                                XYSeriesCollection dataset2 = new XYSeriesCollection();
+                                XYSeriesCollection dataset3 = new XYSeriesCollection();
                                 series3.add(0,currentknn);
                                 series3.add(500,currentknn);
-                                dataset2.addSeries(series3);    
+                                dataset3.addSeries(series3);    
                                 XYPlot plot = (XYPlot) chart.getPlot();
-                                XYItemRenderer renderer2 = new XYLineAndShapeRenderer(true, false); 
+                                XYItemRenderer renderer3 = new XYLineAndShapeRenderer(true, false); 
                                 renderer2.setSeriesPaint(0, Color.BLACK);
-                                plot.setDataset(3, dataset2);
-                                plot.setRenderer(3, renderer2);
+                                plot.setDataset(0, dataset);
+                                plot.setDataset(1, dataset1);
+                                plot.setDataset(3, dataset3);
+                                plot.setRenderer(3, renderer3);
                             }
                         };
                         jxTable.addMouseListener(a2);
@@ -658,11 +664,11 @@ public class MyJXTable  {
                         content.add(charts, BorderLayout.CENTER);
                         content.revalidate();
                         content.repaint();
-                        System.out.println("Finish");
+//                        System.out.println("Finish");
                         break;
                         
                     case "Case Range":
-                        double[] caseRangeSTDData = loadSTD();
+                        double[] caseRangeSTDData = loadCaseRange();
                         double[] cur = new double[100];
                         dataset = new HistogramDataset();
                         dataset.addSeries("range std", caseRangeSTDData, BINS);
@@ -977,7 +983,7 @@ public class MyJXTable  {
         double[] res = new double[dur.size()];
         for(int i = 0; i < dur.size(); i++){
             res[i] = dur.get(i);
-            System.out.println("dur: "+res[i]);
+//            System.out.println("dur: "+res[i]);
         }
         return res;
     }

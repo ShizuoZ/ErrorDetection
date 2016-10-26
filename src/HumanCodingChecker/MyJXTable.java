@@ -2,7 +2,7 @@
  * SimpleJXTableDemo.java is a 1.45 application that requires no other files. It is derived from
  * SimpleTableDemo in the Swing tutorial.
  */
-package errordetection;
+package HumanCodingChecker;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Component;
@@ -19,6 +19,7 @@ import java.awt.event.ComponentEvent;
 import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
 import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.awt.event.WindowEvent;
 import java.awt.geom.Ellipse2D;
 import java.awt.image.BufferedImage;
@@ -589,6 +590,7 @@ public class MyJXTable  {
                                 currentevent = deeventLog.events().get(row);
                                 System.out.println(currentevent.activity());
                                 currentstd = deeventLog.events().get(row).getStd();
+                                if(Double.isNaN(currentstd)) return;
                                 System.out.println("row:" + row + "std:" + currentstd);
                                 double[] dur_std = loadSTD();
                                 int maxstd = (int) ((int) 2 * maxFreq(dur_std));
@@ -596,9 +598,9 @@ public class MyJXTable  {
                                 dataset = new HistogramDataset();
                                 for(int i = 0; i < cur_std.length; i++) cur_std[i] = currentevent.getStd();
                                 dataset = new HistogramDataset();
-                                dataset.addSeries("current", cur_std, BINS);
+                                dataset.addSeries("current", cur_std, 1);
                                 dataset.addSeries("distribution", dur_std, BINS);
-                                ((XYPlot) chart.getPlot()).setDataset(dataset);
+                                ((XYPlot) chart.getPlot()).setDataset(dataset);                                
                             }
                         };
                         jxTable.removeMouseListener(a2);
@@ -614,7 +616,9 @@ public class MyJXTable  {
                         render0.setDefaultShadowsVisible(false);
                         render0.setShadowXOffset(0);
                         render0.setShadowYOffset(0);
-                        render0.setSeriesPaint(0, new Color(0x800000ff, true));
+                        render0.setSeriesPaint(0, new Color(0x80000ff0, true));
+                        render0.setDrawBarOutline(false);
+                        render0.setBarPainter(new StandardXYBarPainter());
                         double[] dur = loadDur();
                         dataset = new HistogramDataset();
                         dataset.addSeries("dur", dur, BINS);
@@ -637,7 +641,7 @@ public class MyJXTable  {
                         XYItemRenderer renderer1 = new XYLineAndShapeRenderer(true, false);
                         Shape shape  = new Ellipse2D.Double(0,0,0.1,0.1);
                         renderer1.setBaseShape(shape);
-                        renderer1.setSeriesPaint(0, Color.RED);
+                        renderer1.setSeriesPaint(0, Color.red);
                         plot.setDataset(1,dataset);
                         plot.setDataset(0,dataset1);
 //                        plot.setDataset(2,dataset2);
@@ -651,7 +655,7 @@ public class MyJXTable  {
                         plot.mapDatasetToRangeAxis(1,1); 
                         Paint[] paintArray_durknn = {
                             new Color(0x80ff000f, true),
-                            new Color(0x80000ff0, true),
+                            new Color(0x8000ff00, true),
                             new Color(0x800000ff, true)
                         };
                         plot.setDrawingSupplier(new DefaultDrawingSupplier(
@@ -661,6 +665,7 @@ public class MyJXTable  {
                             DefaultDrawingSupplier.DEFAULT_STROKE_SEQUENCE,
                             DefaultDrawingSupplier.DEFAULT_OUTLINE_STROKE_SEQUENCE,
                             DefaultDrawingSupplier.DEFAULT_SHAPE_SEQUENCE));
+//                        plot.getRenderer.asInstanceOf[XYBarRenderer].setBarPainter(new StandardXYBarPainter());
                         chart.setBorderVisible(false);  
                         chart.setTitle("Duration KNN");
 //                        chart.setBackgroundPaint(new Color(10,255,255,0));  
@@ -677,15 +682,20 @@ public class MyJXTable  {
                                 currentevent = deeventLog.events().get(row);
                                 currentknn = deeventLog.events().get(row).getKnn();
                                 System.out.println("row:" + row + "knn:" + currentknn);
+                                if(!deeventLog.actknn.containsKey(currentevent.activity())) {
+                                    System.out.println("insufficient error");
+                                    return;
+                                }
                                 double[] dur = loadDur();
                                 dataset = new HistogramDataset();
                                 dataset.addSeries("dur", dur, BINS);
                                 XYDataset dataset1 = loadDurKnn();
-                                XYSeries series3 = new XYSeries("selected");
-                                XYSeriesCollection dataset3 = new XYSeriesCollection();
-                                series3.add(0,currentevent.getKnn());
-                                series3.add(500,currentevent.getKnn());
-                                dataset3.addSeries(series3);    
+//                                XYSeries series3 = new XYSeries("selected");
+//                                XYSeriesCollection dataset3 = new XYSeriesCollection();
+//                                
+//                                series3.add((double)currentevent.duration(),0);
+//                                series3.add((double)currentevent.duration(),2 * maxFreq(dur));
+//                                dataset3.addSeries(series3);    
                                 XYPlot plot = (XYPlot) chart.getPlot();
                                 XYItemRenderer renderer3 = new XYLineAndShapeRenderer(true, false); 
                                 renderer3.setSeriesPaint(0, Color.RED);
@@ -957,7 +967,7 @@ public class MyJXTable  {
         return parameter;
     }
     
-    private static final int BINS = 64;
+    private static final int BINS = 32;
     private final BufferedImage image = getImage();
 
     private BufferedImage getImage() {
@@ -1046,16 +1056,23 @@ public class MyJXTable  {
     }
     
     private int maxFreq(double[] d){
-        HashMap<Double, Integer> freqCount = new HashMap();
-        int max = Integer.MIN_VALUE;
+        HashMap<Integer, Integer> freqCount = new HashMap();
+        Double max = Double.MIN_VALUE;
+        Double min = Double.MAX_VALUE;
+        int maxfreq = Integer.MIN_VALUE;
         for(int i = 0; i < d.length; i++){
-            if(!freqCount.containsKey(d[i])) freqCount.put(d[i],1);
-            else freqCount.put(d[i], freqCount.get(d[i]) + 1);
+            max = Math.max(d[i], max);
+            min = Math.min(d[i], min);
+        }
+        for(int i = 0; i < d.length; i++){
+            Integer bucket = (int) ((d[i] - min) * BINS / (max - min));
+            if(!freqCount.containsKey(bucket)) freqCount.put(bucket,1);
+            else freqCount.put(bucket, freqCount.get(bucket) + 1);
         }
         for(Integer i : freqCount.values()){
-            max = Math.max(i,max);
+            maxfreq = Math.max(i,maxfreq);
         }
-        return max;
+        return maxfreq;
     }
      
     private XYDataset loadDurKnn(){

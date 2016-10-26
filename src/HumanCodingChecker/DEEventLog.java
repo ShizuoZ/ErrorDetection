@@ -1,4 +1,4 @@
-package errordetection;
+package HumanCodingChecker;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -322,7 +322,7 @@ public class DEEventLog {
             }
         }
         mergeUniquely(errors, insuff());
-        insuffErrors.addAll(errors);
+        insuffErrors.addAll(new ArrayList<DEEvent>(errors));
         // STATISTICAL
         for (ErrorType et : ets) {
             switch (et) {
